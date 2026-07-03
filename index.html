@@ -1,0 +1,2035 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Milu — Цифровой помощник молодежи</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand:#303880;
+    --brand-dark:#0A1047;
+    --brand-light:#F8E9E0;
+    --accent:#FD7118;
+    --accent-light:#FFE9DA;
+    --accent2:#FFA384;
+    --accent2-light:#FFF1EA;
+    --danger:#D64550;
+    --danger-light:#FBE7E8;
+  }
+  *{-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Inter',sans-serif;}
+  h1,h2,h3,.font-display{font-family:'Manrope',sans-serif;}
+  ::-webkit-scrollbar{width:0px;height:0px;}
+  .brand-bg{background-color:var(--brand);}
+  .brand-text{color:var(--brand);}
+  .brand-dark-bg{background-color:var(--brand-dark);}
+  .brand-light-bg{background-color:var(--brand-light);}
+  .accent-bg{background-color:var(--accent);}
+  .accent-text{color:var(--accent);}
+  .accent-light-bg{background-color:var(--accent-light);}
+  .accent2-bg{background-color:var(--accent2);}
+  .accent2-text{color:var(--accent2);}
+  .accent2-light-bg{background-color:var(--accent2-light);}
+  .danger-bg{background-color:var(--danger);}
+  .danger-text{color:var(--danger);}
+  .danger-light-bg{background-color:var(--danger-light);}
+  .progress-track{background:#EAE7F2;border-radius:99px;height:7px;overflow:hidden;}
+  .progress-fill{background:linear-gradient(90deg,var(--brand),var(--accent));height:100%;border-radius:99px;transition:width .5s ease;}
+  .mood-btn{transition:all .2s ease;}
+  .mood-btn.mood-selected{transform:scale(1.18);filter:drop-shadow(0 3px 6px rgba(253,113,24,.4));}
+  .bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;flex:1;height:100%;}
+  .bar-fill{width:60%;border-radius:6px 6px 3px 3px;background:#E4E1F0;transition:height .4s ease;min-height:4px;}
+  .bar-fill.bar-today{background:linear-gradient(180deg,var(--accent),var(--brand));}
+  .fade-in{animation:fadeIn .35s ease both;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .pop-in{animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;}
+  @keyframes popIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+  .shake{animation:shakeMap .45s ease;}
+  @keyframes shakeMap{
+    0%{transform:translateX(0);}
+    20%{transform:translateX(-6px) rotate(-0.5deg);}
+    40%{transform:translateX(6px) rotate(0.5deg);}
+    60%{transform:translateX(-4px);}
+    80%{transform:translateX(4px);}
+    100%{transform:translateX(0);}
+  }
+  .dot-bounce{display:inline-flex;align-items:center;gap:4px;}
+  .dot-bounce span{width:7px;height:7px;border-radius:50%;background:var(--brand);display:inline-block;animation:dotBounce 1.2s infinite ease-in-out both;}
+  .dot-bounce span:nth-child(1){animation-delay:-0.32s;}
+  .dot-bounce span:nth-child(2){animation-delay:-0.16s;}
+  @keyframes dotBounce{0%,80%,100%{transform:scale(0.6);opacity:.5;}40%{transform:scale(1);opacity:1;}}
+  .scrollarea{scrollbar-width:none;}
+  .accordion-body{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+  .accordion-body.open{max-height:600px;}
+  input[type="range"]{-webkit-appearance:none;height:6px;border-radius:6px;background:#E2E8F0;}
+  input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--brand);cursor:pointer;border:3px solid white;box-shadow:0 1px 4px rgba(0,0,0,.3);}
+  select, input{font-family:'Inter',sans-serif;}
+  .tab-active-indicator{position:absolute;top:-2px;left:50%;transform:translateX(-50%);width:28px;height:3px;border-radius:99px;background:var(--brand);}
+</style>
+</head>
+<body class="bg-slate-200">
+
+<div id="app" class="max-w-md mx-auto min-h-screen relative bg-[#FFFAF6] shadow-2xl font-sans text-slate-900 overflow-hidden"></div>
+
+<script>
+/* =========================================================================
+   MILU — DIGITAL YOUTH ASSISTANT FOR CENTRAL ASIA
+   Single-file Vanilla JS SPA
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. GLOBAL STATE
+------------------------------------------------------------------------- */
+const state = {
+  user: {
+    authenticated: false,
+    nickname: '',
+    password: '',
+    age: 14,
+    country: 'Kazakhstan',
+    city: 'Almaty'
+  },
+  currentTab: 'home',
+  currentLanguage: 'ru',
+  authMode: 'signin', // 'signin' | 'signup'
+  showPassword: false,
+  openaiKey: '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',
+  chatHistory: [],
+  chatLoading: false,
+  chatError: '',
+  forumQuestions: [
+    { id: 1, text_ru: "Как справиться со стрессом перед экзаменами?", category: "mental", answered: true, answer: "Попробуй технику дыхания 4-7-8 и делай перерывы каждые 45 минут. Если тревога сильная, обратись к школьному психологу.", expert: "Y-PEER Mediator" },
+    { id: 2, text_ru: "Правда ли, что энергетики вредны в подростковом возрасте?", category: "health", answered: true, answer: "Да, высокое содержание кофеина и сахара может влиять на сердечный ритм и сон подростка. Рекомендуется полностью исключить их до 18 лет.", expert: "Youth Health Center" },
+    { id: 3, text_ru: "Как понять, что переписка с незнакомцем онлайн опасна?", category: "safety", answered: true, answer: "Если собеседник просит личные фото, адрес, встречу без родителей, или торопит — это тревожные сигналы. Прекрати переписку и расскажи взрослому, которому доверяешь.", expert: "Digital Safety Coach" },
+    { id: 4, text_ru: "Сколько денег стоит откладывать с карманных расходов?", category: "other", answered: false, answer: '', expert: '' }
+  ],
+  nextQuestionId: 5,
+  registeredEvents: [],
+  activeModal: null, // module key or null
+  activeCenterId: null,
+  mapCity: 'Almaty',
+  activeLessonId: null,
+  lessonLoadingId: null,
+  lessonError: '',
+  completedLessonIds: [],
+  lessonContent: {},
+  activityLog: [],
+  moodLog: {}
+};
+
+try {
+  const savedKey = localStorage.getItem('mapp_openai_key');
+  if (savedKey) state.openaiKey = savedKey;
+  const savedUser = localStorage.getItem('mapp_user');
+  if (savedUser) {
+    const parsed = JSON.parse(savedUser);
+    state.user = Object.assign(state.user, parsed);
+  }
+  const savedLang = localStorage.getItem('mapp_lang');
+  if (savedLang) state.currentLanguage = savedLang;
+  const savedEvents = localStorage.getItem('mapp_events');
+  if (savedEvents) state.registeredEvents = JSON.parse(savedEvents);
+  const savedCompleted = localStorage.getItem('mapp_completed_lessons');
+  if (savedCompleted) state.completedLessonIds = JSON.parse(savedCompleted);
+  const savedLessonContent = localStorage.getItem('mapp_lesson_content');
+  if (savedLessonContent) state.lessonContent = JSON.parse(savedLessonContent);
+  const savedActivity = localStorage.getItem('mapp_activity_log');
+  if (savedActivity) state.activityLog = JSON.parse(savedActivity);
+  const savedMood = localStorage.getItem('mapp_mood_log');
+  if (savedMood) state.moodLog = JSON.parse(savedMood);
+} catch (e) { /* localStorage unavailable — continue with defaults */ }
+
+/* -------------------------------------------------------------------------
+   2. GEOGRAPHY MATRIX
+------------------------------------------------------------------------- */
+const GEO = {
+  Kazakhstan: { flag: '🇰🇿', cities: ['Almaty', 'Astana', 'Shymkent', 'Semey', 'Karaganda', 'Aktobe', 'Taraz', 'Pavlodar', 'Oskemen', 'Kyzylorda', 'Atyrau', 'Kostanay', 'Petropavl', 'Oral', 'Temirtau', 'Turkistan', 'Kokshetau', 'Aktau', 'Zhezkazgan', 'Ekibastuz'] },
+  Kyrgyzstan: { flag: '🇰🇬', cities: ['Bishkek', 'Osh', 'Jalal-Abad', 'Karakol', 'Tokmok', 'Uzgen', 'Balykchy', 'Naryn', 'Talas', 'Kant', 'Kara-Balta', 'Isfana', 'Batken', 'Kyzyl-Kiya'] },
+  Uzbekistan: { flag: '🇺🇿', cities: ['Tashkent', 'Samarkand', 'Bukhara', 'Namangan', 'Andijan', 'Nukus', 'Fergana', 'Qarshi', 'Termez', 'Jizzakh', 'Navoiy', 'Gulistan', 'Urgench', 'Kokand', 'Margilan', 'Chirchiq'] },
+  Tajikistan: { flag: '🇹🇯', cities: ['Dushanbe', 'Khujand', 'Bokhtar', 'Kulob', 'Istaravshan', 'Konibodom', 'Panjakent', 'Isfara', 'Tursunzoda', 'Vahdat', 'Rogun', 'Norak'] },
+  Turkmenistan: { flag: '🇹🇲', cities: ['Ashgabat', 'Turkmenabat', 'Mary', 'Dashoguz', 'Balkanabat', 'Bayramaly', 'Tejen', 'Serdar', 'Abadan', 'Turkmenbashi'] }
+};
+
+/* -------------------------------------------------------------------------
+   3. CRISIS HOTLINES BY COUNTRY/CITY
+------------------------------------------------------------------------- */
+const CRISIS = {
+  Kazakhstan: { national: '150', text: 'Единая детская телефонная линия доверия', local: { Almaty: 'Центр психического здоровья г. Алматы: +7 (727) 292-64-31', Astana: 'Центр психического здоровья г. Астана: +7 (7172) 21-14-53', Shymkent: 'Кризисный центр Шымкента: +7 (7252) 53-24-10', Semey: 'Кризисный центр Семея: +7 (7222) 52-31-40', Karaganda: 'Кризисный центр Караганды: +7 (7212) 41-22-09' } },
+  Kyrgyzstan: { national: '117', text: 'Национальная линия доверия для детей и подростков', local: { Bishkek: 'Центр психического здоровья Бишкека: +996 (312) 54-49-91', Osh: 'Кризисный центр Оша: +996 (3222) 5-05-15', 'Jalal-Abad': 'Служба поддержки Джалал-Абада: +996 (3722) 5-04-33', Karakol: 'Служба поддержки Каракола: +996 (3922) 5-31-20' } },
+  Uzbekistan: { national: '1146', text: 'Линия доверия "Ishonch telefoni"', local: { Tashkent: 'Республиканский центр психического здоровья Ташкента: +998 (71) 268-51-11', Samarkand: 'Центр поддержки Самарканда: +998 (66) 233-14-05', Bukhara: 'Центр поддержки Бухары: +998 (65) 221-30-18', Namangan: 'Центр поддержки Намангана: +998 (69) 227-45-02' } },
+  Tajikistan: { national: '1213', text: 'Республиканская линия психологической помощи', local: { Dushanbe: 'Центр психического здоровья Душанбе: +992 (37) 221-31-45', Khujand: 'Центр поддержки Худжанда: +992 (3422) 6-05-19', Bokhtar: 'Центр поддержки Бохтара: +992 (3222) 2-14-27' } },
+  Turkmenistan: { national: '03', text: 'Служба экстренной психологической помощи', local: { Ashgabat: 'Центр психического здоровья Ашхабада: +993 (12) 39-42-11', Turkmenabat: 'Центр поддержки Туркменабата: +993 (422) 5-11-08', Mary: 'Центр поддержки Мары: +993 (522) 4-20-16' } }
+};
+
+/* -------------------------------------------------------------------------
+   4. TRANSLATIONS — 6 LANGUAGES
+------------------------------------------------------------------------- */
+const translations = {
+ru: {
+  appName: "milu", tagline: "Цифровой помощник молодёжи Центральной Азии",
+  welcomeBack: "С возвращением", joinUs: "Присоединяйся к milu",
+  signIn: "Войти", signUp: "Регистрация",
+  nickname: "Анонимный никнейм", nicknamePlaceholder: "Например: SnowLeopard_14",
+  password: "Пароль", passwordPlaceholder: "Введите пароль",
+  age: "Возраст", country: "Страна", city: "Город",
+  selectCountry: "Выберите страну", selectCity: "Выберите город",
+  createAccount: "Создать аккаунт", login: "Войти в аккаунт",
+  alreadyHaveAccount: "Уже есть аккаунт? Войти", dontHaveAccount: "Нет аккаунта? Зарегистрироваться",
+  securityNote: "Данные хранятся локально на вашем устройстве. Мы не собираем персональные данные и гарантируем полную анонимность.",
+  fillAllFields: "Пожалуйста, заполните все поля",
+  navHome: "Главная", navForum: "Форум", navMap: "Карта", navCalendar: "Профиль",
+  greetingHi: "Привет",
+  tip1214: "🛡️ Безопасность: никогда не делись личными данными с незнакомцами онлайн и всегда рассказывай взрослым о подозрительных сообщениях.",
+  tip1517: "🧠 Ментальное здоровье: регулярный сон и разговор с тем, кому доверяешь, снижают уровень стресса на 40%.",
+  tip1718: "💰 Финансовая грамотность: правило 50/30/20 — раздели карманные деньги на нужды, желания и накопления.",
+  aiChatTitle: "AI-Наставник milu", aiChatSubtitle: "Задай любой вопрос — я рядом",
+  askPlaceholder: "Напиши свой вопрос...", send: "Отправить",
+  thinking: "Печатает...", aiWelcome: "Привет! Я твой AI-наставник milu. Можешь спросить меня о здоровье, безопасности, эмоциях, деньгах или просто поговорить. Всё останется между нами. 💬",
+  errorGeneric: "Что-то пошло не так. Попробуй ещё раз.",
+  errorNetwork: "Нет соединения с сервером. Проверь интернет и попробуй снова.",
+  errorAuth: "Ошибка API-ключа. Проверь ключ OpenAI в настройках профиля.",
+  errorRate: "Превышен лимит запросов или закончился баланс API-ключа.",
+  crisisAlertTitle: "⚠️ Важно: тебе нужна помощь прямо сейчас",
+  crisisAlertText: "Если тебе тяжело или ты думаешь о том, чтобы навредить себе — ты не один. Позвони по номеру ниже прямо сейчас.",
+  moduleAnatomy: "Анатомия и здоровье", moduleMental: "Ментальный баланс",
+  moduleDigital: "Цифровая безопасность", moduleFinance: "Финансовая грамотность",
+  close: "Закрыть",
+  forumTitle: "Анонимный Q&A-форум", forumSubtitle: "Задавай вопросы — эксперты ответят",
+  askQuestion: "Задать вопрос", questionPlaceholder: "О чём хочешь спросить?",
+  submit: "Опубликовать", categoryMental: "Психология", categoryHealth: "Здоровье",
+  categorySafety: "Безопасность", categoryOther: "Другое", selectCategory: "Категория",
+  expertAnswer: "Ответ эксперта", noAnswerYet: "Ожидает ответа эксперта", pending: "На рассмотрении",
+  questionPosted: "Вопрос опубликован!",
+  mapTitle: "Региональные центры помощи", mapSubtitle: "Найди поддержку рядом с тобой",
+  filterByCity: "Фильтр по городу", centersNearby: "Центры поблизости",
+  schedule: "Часы работы", address: "Адрес", hotline: "Горячая линия", staff: "Специалисты",
+  call: "Позвонить", viewDetails: "Подробнее", noCentersFound: "В этом городе центры не найдены",
+  calendarTitle: "Календарь и профиль", eventsTitle: "Мероприятия и вебинары",
+  register: "Записаться", registered: "Записан ✓", spotsLeft: "мест осталось",
+  profileTitle: "Профиль", editProfile: "Редактировать профиль",
+  languageTitle: "Язык интерфейса", apiKeyTitle: "API-ключ OpenAI",
+  apiKeyDesc: "Используется для работы AI-наставника. Хранится только на вашем устройстве.",
+  saveChanges: "Сохранить изменения", saved: "Сохранено ✓", logout: "Выйти из аккаунта",
+  yourStats: "Твоя активность", questionsAsked: "вопросов задано", eventsRegistered: "мероприятий",
+  showPasswordBtn: "Показать", hidePasswordBtn: "Скрыть",
+  online: "онлайн", verified: "Проверено", years: "лет",
+  moodTrackerTitle: "Как ты себя чувствуешь сегодня?", moodSaved: "Спасибо! Настроение сохранено",
+  weeklyActivityTitle: "Активность за неделю", minutesLabel: "мин. обучения",
+  skillMasteryTitle: "Мастерство", streakTitle: "дней подряд", streakLabel: "Серия",
+  securityLevel: "Уровень защиты", learnedLabel: "Изучено", topicsFor: "Темы для возраста",
+  generateLesson: "Сгенерировать урок", viewLesson: "Смотреть урок",
+  lessonGenerating: "AI создаёт урок...", backToTopics: "Назад к темам",
+  completedLabel: "Завершено", organizerLabel: "Организатор",
+  yourProgress: "Твой прогресс", noLessonsForAge: "Для твоего возраста уроки скоро появятся",
+  mon: "Пн", tue: "Вт", wed: "Ср", thu: "Чт", fri: "Пт", sat: "Сб", sun: "Вс"
+},
+en: {
+  appName: "milu", tagline: "Digital Youth Assistant for Central Asia",
+  welcomeBack: "Welcome back", joinUs: "Join milu",
+  signIn: "Sign In", signUp: "Sign Up",
+  nickname: "Anonymous nickname", nicknamePlaceholder: "e.g. SnowLeopard_14",
+  password: "Password", passwordPlaceholder: "Enter password",
+  age: "Age", country: "Country", city: "City",
+  selectCountry: "Select country", selectCity: "Select city",
+  createAccount: "Create account", login: "Log in",
+  alreadyHaveAccount: "Already have an account? Sign in", dontHaveAccount: "No account? Sign up",
+  securityNote: "Data is stored locally on your device. We collect no personal data and guarantee full anonymity.",
+  fillAllFields: "Please fill in all fields",
+  navHome: "Home", navForum: "Forum", navMap: "Map", navCalendar: "Profile",
+  greetingHi: "Hi",
+  tip1214: "🛡️ Safety: never share personal info with strangers online, and always tell an adult about suspicious messages.",
+  tip1517: "🧠 Mental health: consistent sleep and talking to someone you trust can lower stress levels by 40%.",
+  tip1718: "💰 Financial literacy: the 50/30/20 rule — split your money into needs, wants, and savings.",
+  aiChatTitle: "milu AI Mentor", aiChatSubtitle: "Ask anything — I'm here for you",
+  askPlaceholder: "Type your question...", send: "Send",
+  thinking: "Typing...", aiWelcome: "Hi! I'm your milu AI mentor. Ask me about health, safety, emotions, money, or just talk. It stays between us. 💬",
+  errorGeneric: "Something went wrong. Please try again.",
+  errorNetwork: "No connection to server. Check your internet and try again.",
+  errorAuth: "API key error. Check your OpenAI key in profile settings.",
+  errorRate: "Request limit reached or API key balance is empty.",
+  crisisAlertTitle: "⚠️ Important: you need help right now",
+  crisisAlertText: "If you're struggling or thinking about hurting yourself — you are not alone. Call the number below right now.",
+  moduleAnatomy: "Anatomy & Health", moduleMental: "Mental Balance",
+  moduleDigital: "Digital Safety", moduleFinance: "Financial Literacy",
+  close: "Close",
+  forumTitle: "Anonymous Q&A Forum", forumSubtitle: "Ask questions — experts will answer",
+  askQuestion: "Ask a question", questionPlaceholder: "What do you want to ask?",
+  submit: "Post", categoryMental: "Psychology", categoryHealth: "Health",
+  categorySafety: "Safety", categoryOther: "Other", selectCategory: "Category",
+  expertAnswer: "Expert answer", noAnswerYet: "Awaiting expert response", pending: "Pending",
+  questionPosted: "Question posted!",
+  mapTitle: "Regional Support Centers", mapSubtitle: "Find support near you",
+  filterByCity: "Filter by city", centersNearby: "Nearby centers",
+  schedule: "Hours", address: "Address", hotline: "Hotline", staff: "Staff",
+  call: "Call", viewDetails: "View details", noCentersFound: "No centers found in this city",
+  calendarTitle: "Calendar & Profile", eventsTitle: "Events & Webinars",
+  register: "Sign Up", registered: "You're Registered ✓", spotsLeft: "spots left",
+  profileTitle: "Profile", editProfile: "Edit profile",
+  languageTitle: "Interface language", apiKeyTitle: "OpenAI API Key",
+  apiKeyDesc: "Used to power the AI mentor. Stored only on your device.",
+  saveChanges: "Save changes", saved: "Saved ✓", logout: "Log out",
+  yourStats: "Your activity", questionsAsked: "questions asked", eventsRegistered: "events",
+  showPasswordBtn: "Show", hidePasswordBtn: "Hide",
+  online: "online", verified: "Verified", years: "y.o.",
+  moodTrackerTitle: "How are you feeling today?", moodSaved: "Thanks! Mood saved",
+  weeklyActivityTitle: "Weekly activity", minutesLabel: "min. learned",
+  skillMasteryTitle: "Skill mastery", streakTitle: "days in a row", streakLabel: "Streak",
+  securityLevel: "Security level", learnedLabel: "Learned", topicsFor: "Topics for age",
+  generateLesson: "Generate lesson", viewLesson: "View lesson",
+  lessonGenerating: "AI is creating the lesson...", backToTopics: "Back to topics",
+  completedLabel: "Completed", organizerLabel: "Organizer",
+  yourProgress: "Your progress", noLessonsForAge: "Lessons for your age are coming soon",
+  mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun"
+},
+kk: {
+  appName: "milu", tagline: "Орталық Азия жастарының цифрлық көмекшісі",
+  welcomeBack: "Қайта оралуыңызбен", joinUs: "milu-ға қосыл",
+  signIn: "Кіру", signUp: "Тіркелу",
+  nickname: "Анонимді ник", nicknamePlaceholder: "Мысалы: SnowLeopard_14",
+  password: "Құпия сөз", passwordPlaceholder: "Құпия сөзді енгізіңіз",
+  age: "Жасы", country: "Ел", city: "Қала",
+  selectCountry: "Елді таңдаңыз", selectCity: "Қаланы таңдаңыз",
+  createAccount: "Аккаунт құру", login: "Аккаунтқа кіру",
+  alreadyHaveAccount: "Аккаунтыңыз бар ма? Кіру", dontHaveAccount: "Аккаунт жоқ па? Тіркелу",
+  securityNote: "Деректер тек сіздің құрылғыңызда сақталады. Біз жеке деректерді жинамаймыз және толық анонимдікке кепілдік береміз.",
+  fillAllFields: "Барлық өрістерді толтырыңыз",
+  navHome: "Басты бет", navForum: "Форум", navMap: "Карта", navCalendar: "Профиль",
+  greetingHi: "Сәлем",
+  tip1214: "🛡️ Қауіпсіздік: желіде бейтаныс адамдармен жеке деректеріңізбен бөліспеңіз және күдікті хабарламалар туралы үлкендерге айтыңыз.",
+  tip1517: "🧠 Психикалық денсаулық: тұрақты ұйқы және сенімді адаммен әңгімелесу стресс деңгейін 40%-ға төмендетеді.",
+  tip1718: "💰 Қаржылық сауаттылық: 50/30/20 ережесі — ақшаңызды қажеттілік, қалау және жинаққа бөліңіз.",
+  aiChatTitle: "milu AI-Тәлімгер", aiChatSubtitle: "Кез келген сұрақ қой — мен жаныңдамын",
+  askPlaceholder: "Сұрағыңызды жазыңыз...", send: "Жіберу",
+  thinking: "Теруде...", aiWelcome: "Сәлем! Мен сенің milu AI-тәлімгеріңмін. Денсаулық, қауіпсіздік, эмоциялар, ақша туралы сұрай аласың немесе жай сөйлесе аласың. Бәрі арамызда қалады. 💬",
+  errorGeneric: "Бірдеңе дұрыс болмады. Қайта көріңіз.",
+  errorNetwork: "Сервермен байланыс жоқ. Интернетті тексеріп, қайта көріңіз.",
+  errorAuth: "API-кілт қатесі. Профиль баптауларынан OpenAI кілтін тексеріңіз.",
+  errorRate: "Сұраныс шегі асып кетті немесе API балансы таусылды.",
+  crisisAlertTitle: "⚠️ Маңызды: саған қазір көмек керек",
+  crisisAlertText: "Егер саған қиын болса немесе өзіңе зиян келтіру туралы ойласаң — сен жалғыз емессің. Төмендегі нөмірге қазір қоңырау шал.",
+  moduleAnatomy: "Анатомия және денсаулық", moduleMental: "Психикалық тепе-теңдік",
+  moduleDigital: "Цифрлық қауіпсіздік", moduleFinance: "Қаржылық сауаттылық",
+  close: "Жабу",
+  forumTitle: "Анонимді Q&A-форум", forumSubtitle: "Сұрақ қой — сарапшылар жауап береді",
+  askQuestion: "Сұрақ қою", questionPlaceholder: "Нені сұрағың келеді?",
+  submit: "Жариялау", categoryMental: "Психология", categoryHealth: "Денсаулық",
+  categorySafety: "Қауіпсіздік", categoryOther: "Басқа", selectCategory: "Санат",
+  expertAnswer: "Сарапшы жауабы", noAnswerYet: "Сарапшы жауабын күтуде", pending: "Қаралуда",
+  questionPosted: "Сұрақ жарияланды!",
+  mapTitle: "Аймақтық көмек орталықтары", mapSubtitle: "Жаныңнан қолдау тап",
+  filterByCity: "Қала бойынша сүзгі", centersNearby: "Жақын орталықтар",
+  schedule: "Жұмыс уақыты", address: "Мекенжай", hotline: "Сенім телефоны", staff: "Мамандар",
+  call: "Қоңырау шалу", viewDetails: "Толығырақ", noCentersFound: "Бұл қалада орталықтар табылмады",
+  calendarTitle: "Күнтізбе және профиль", eventsTitle: "Іс-шаралар және вебинарлар",
+  register: "Тіркелу", registered: "Тіркелді ✓", spotsLeft: "орын қалды",
+  profileTitle: "Профиль", editProfile: "Профильді өңдеу",
+  languageTitle: "Интерфейс тілі", apiKeyTitle: "OpenAI API-кілті",
+  apiKeyDesc: "AI-тәлімгерді іске қосу үшін қолданылады. Тек сіздің құрылғыңызда сақталады.",
+  saveChanges: "Өзгерістерді сақтау", saved: "Сақталды ✓", logout: "Аккаунттан шығу",
+  yourStats: "Сенің белсенділігің", questionsAsked: "сұрақ қойылды", eventsRegistered: "іс-шара",
+  showPasswordBtn: "Көрсету", hidePasswordBtn: "Жасыру",
+  online: "онлайн", verified: "Тексерілген", years: "жаста",
+  moodTrackerTitle: "Бүгін көңіл-күйің қалай?", moodSaved: "Рахмет! Көңіл-күй сақталды",
+  weeklyActivityTitle: "Аптадағы белсенділік", minutesLabel: "мин. оқу",
+  skillMasteryTitle: "Шеберлік", streakTitle: "күн қатарынан", streakLabel: "Серия",
+  securityLevel: "Қорғаныс деңгейі", learnedLabel: "Үйренілді", topicsFor: "Жас тобына арналған тақырыптар",
+  generateLesson: "Сабақты құру", viewLesson: "Сабақты көру",
+  lessonGenerating: "AI сабақ жасауда...", backToTopics: "Тақырыптарға оралу",
+  completedLabel: "Аяқталды", organizerLabel: "Ұйымдастырушы",
+  yourProgress: "Сенің прогресің", noLessonsForAge: "Жасыңа арналған сабақтар жақында пайда болады",
+  mon: "Дс", tue: "Сс", wed: "Ср", thu: "Бс", fri: "Жм", sat: "Сб", sun: "Жк"
+},
+ky: {
+  appName: "milu", tagline: "Борбордук Азия жаштарынын санарип жардамчысы",
+  welcomeBack: "Кайра кош келдиңиз", joinUs: "milu'ка кошул",
+  signIn: "Кирүү", signUp: "Каттоо",
+  nickname: "Анонимдүү ник", nicknamePlaceholder: "Мисалы: SnowLeopard_14",
+  password: "Сырсөз", passwordPlaceholder: "Сырсөздү киргизиңиз",
+  age: "Жашы", country: "Өлкө", city: "Шаар",
+  selectCountry: "Өлкөнү тандаңыз", selectCity: "Шаарды тандаңыз",
+  createAccount: "Аккаунт түзүү", login: "Аккаунтка кирүү",
+  alreadyHaveAccount: "Аккаунтуңуз барбы? Кирүү", dontHaveAccount: "Аккаунт жокпу? Каттоо",
+  securityNote: "Маалыматтар сиздин түзмөгүңүздө гана сакталат. Биз жеке маалыматтарды чогултпайбыз жана толук анонимдүүлүктү кепилдейбиз.",
+  fillAllFields: "Бардык талааларды толтуруңуз",
+  navHome: "Башкы бет", navForum: "Форум", navMap: "Карта", navCalendar: "Профиль",
+  greetingHi: "Салам",
+  tip1214: "🛡️ Коопсуздук: интернетте бейтааныш адамдарга жеке маалыматыңызды бербеңиз жана шектүү билдирүүлөр жөнүндө чоңдорго айтыңыз.",
+  tip1517: "🧠 Психикалык ден соолук: туруктуу уйку жана ишенген адам менен сүйлөшүү стресстин деңгээлин 40%га төмөндөтөт.",
+  tip1718: "💰 Каржылык сабаттуулук: 50/30/20 эрежеси — акчаңызды керектөө, каалоо жана топтомго бөлүңүз.",
+  aiChatTitle: "milu AI-Насаатчы", aiChatSubtitle: "Каалаган суроо бер — мен жаныңдамын",
+  askPlaceholder: "Суроонузду жазыңыз...", send: "Жөнөтүү",
+  thinking: "Терилүүдө...", aiWelcome: "Салам! Мен сенин milu AI-насаатчыңмын. Ден соолук, коопсуздук, эмоциялар, акча тууралуу сурай аласың же жөн эле сүйлөшө аласың. Баары арабызда калат. 💬",
+  errorGeneric: "Бир нерсе туура эмес болду. Кайра аракет кылыңыз.",
+  errorNetwork: "Сервер менен байланыш жок. Интернетти текшерип, кайра аракет кылыңыз.",
+  errorAuth: "API-ачкыч катасы. Профиль жөндөөлөрүнөн OpenAI ачкычын текшериңиз.",
+  errorRate: "Сурам чеги ашты же API балансы бүттү.",
+  crisisAlertTitle: "⚠️ Маанилүү: сага азыр жардам керек",
+  crisisAlertText: "Эгер сага кыйын болсо же өзүңө зыян келтирүү жөнүндө ойлосоң — сен жалгыз эмессиң. Төмөнкү номерге азыр чал.",
+  moduleAnatomy: "Анатомия жана ден соолук", moduleMental: "Психикалык тең салмактуулук",
+  moduleDigital: "Санарип коопсуздук", moduleFinance: "Каржылык сабаттуулук",
+  close: "Жабуу",
+  forumTitle: "Анонимдүү Q&A-форум", forumSubtitle: "Суроо бер — эксперттер жооп берет",
+  askQuestion: "Суроо берүү", questionPlaceholder: "Эмнени сурагың келет?",
+  submit: "Жарыялоо", categoryMental: "Психология", categoryHealth: "Ден соолук",
+  categorySafety: "Коопсуздук", categoryOther: "Башка", selectCategory: "Категория",
+  expertAnswer: "Эксперттин жообу", noAnswerYet: "Эксперттин жообун күтүүдө", pending: "Каралууда",
+  questionPosted: "Суроо жарыяланды!",
+  mapTitle: "Аймактык жардам борборлору", mapSubtitle: "Жаныңдан колдоо тап",
+  filterByCity: "Шаар боюнча чыпка", centersNearby: "Жакынкы борборлор",
+  schedule: "Иш убактысы", address: "Дареги", hotline: "Ишеним телефону", staff: "Адистер",
+  call: "Чалуу", viewDetails: "Толугураак", noCentersFound: "Бул шаарда борборлор табылган жок",
+  calendarTitle: "Күнтизбе жана профиль", eventsTitle: "Иш-чаралар жана вебинарлар",
+  register: "Катталуу", registered: "Катталды ✓", spotsLeft: "орун калды",
+  profileTitle: "Профиль", editProfile: "Профилди түзөтүү",
+  languageTitle: "Интерфейс тили", apiKeyTitle: "OpenAI API-ачкычы",
+  apiKeyDesc: "AI-насаатчыны иштетүү үчүн колдонулат. Сиздин түзмөгүңүздө гана сакталат.",
+  saveChanges: "Өзгөртүүлөрдү сактоо", saved: "Сакталды ✓", logout: "Аккаунттан чыгуу",
+  yourStats: "Сенин активдүүлүгүң", questionsAsked: "суроо берилди", eventsRegistered: "иш-чара",
+  showPasswordBtn: "Көрсөтүү", hidePasswordBtn: "Жашыруу",
+  online: "онлайн", verified: "Текшерилген", years: "жашта",
+  moodTrackerTitle: "Бүгүн көңүлүң кандай?", moodSaved: "Рахмат! Маанай сакталды",
+  weeklyActivityTitle: "Жумадагы активдүүлүк", minutesLabel: "мүн. окуу",
+  skillMasteryTitle: "Чеберчилик", streakTitle: "күн катары менен", streakLabel: "Серия",
+  securityLevel: "Коргоо деңгээли", learnedLabel: "Үйрөнүлдү", topicsFor: "Жаш тобу үчүн темалар",
+  generateLesson: "Сабакты түзүү", viewLesson: "Сабакты көрүү",
+  lessonGenerating: "AI сабак түзүүдө...", backToTopics: "Темаларга кайтуу",
+  completedLabel: "Аяктады", organizerLabel: "Уюштуруучу",
+  yourProgress: "Сенин прогрессиң", noLessonsForAge: "Жашыңа арналган сабактар жакында пайда болот",
+  mon: "Дш", tue: "Шш", wed: "Шр", thu: "Бш", fri: "Жм", sat: "Иш", sun: "Жк"
+},
+uz: {
+  appName: "milu", tagline: "Markaziy Osiyo yoshlari uchun raqamli yordamchi",
+  welcomeBack: "Qaytganingizdan xursandmiz", joinUs: "milu'ga qo'shiling",
+  signIn: "Kirish", signUp: "Ro'yxatdan o'tish",
+  nickname: "Anonim taxallus", nicknamePlaceholder: "Masalan: SnowLeopard_14",
+  password: "Parol", passwordPlaceholder: "Parolni kiriting",
+  age: "Yosh", country: "Davlat", city: "Shahar",
+  selectCountry: "Davlatni tanlang", selectCity: "Shaharni tanlang",
+  createAccount: "Hisob yaratish", login: "Hisobga kirish",
+  alreadyHaveAccount: "Hisobingiz bormi? Kirish", dontHaveAccount: "Hisobingiz yo'qmi? Ro'yxatdan o'tish",
+  securityNote: "Ma'lumotlar faqat qurilmangizda saqlanadi. Biz shaxsiy ma'lumotlarni yig'maymiz va to'liq anonimlikni kafolatlaymiz.",
+  fillAllFields: "Barcha maydonlarni to'ldiring",
+  navHome: "Bosh sahifa", navForum: "Forum", navMap: "Xarita", navCalendar: "Profil",
+  greetingHi: "Salom",
+  tip1214: "🛡️ Xavfsizlik: internetda notanish odamlarga shaxsiy ma'lumot bermang va shubhali xabarlar haqida kattalarga ayting.",
+  tip1517: "🧠 Ruhiy salomatlik: barqaror uyqu va ishonган odam bilan gaplashish stress darajasini 40% ga kamaytiradi.",
+  tip1718: "💰 Moliyaviy savodxonlik: 50/30/20 qoidasi — pulingizni ehtiyoj, istak va jamg'armaga bo'ling.",
+  aiChatTitle: "milu AI-Murabbiy", aiChatSubtitle: "Har qanday savol bering — men yoningizdaman",
+  askPlaceholder: "Savolingizni yozing...", send: "Yuborish",
+  thinking: "Yozmoqda...", aiWelcome: "Salom! Men sizning milu AI-murabbiyingizman. Sog'liq, xavfsizlik, hissiyotlar, pul haqida so'rashingiz yoki shunchaki suhbatlashishingiz mumkin. Hammasi ikkovimiz orasida qoladi. 💬",
+  errorGeneric: "Nimadir xato ketdi. Qayta urinib ko'ring.",
+  errorNetwork: "Server bilan aloqa yo'q. Internetni tekshirib, qayta urinib ko'ring.",
+  errorAuth: "API-kalit xatosi. Profil sozlamalaridan OpenAI kalitini tekshiring.",
+  errorRate: "So'rov chegarasiga yetdingiz yoki API balansi tugadi.",
+  crisisAlertTitle: "⚠️ Muhim: sizga hozir yordam kerak",
+  crisisAlertText: "Agar sizga qiyin bo'lsa yoki o'zingizga zarar yetkazish haqida o'ylayotgan bo'lsangiz — siz yolg'iz emassiz. Quyidagi raqamga hozir qo'ng'iroq qiling.",
+  moduleAnatomy: "Anatomiya va salomatlik", moduleMental: "Ruhiy muvozanat",
+  moduleDigital: "Raqamli xavfsizlik", moduleFinance: "Moliyaviy savodxonlik",
+  close: "Yopish",
+  forumTitle: "Anonim Q&A-forum", forumSubtitle: "Savol bering — ekspertlar javob beradi",
+  askQuestion: "Savol berish", questionPlaceholder: "Nimani so'ramoqchisiz?",
+  submit: "Joylash", categoryMental: "Psixologiya", categoryHealth: "Salomatlik",
+  categorySafety: "Xavfsizlik", categoryOther: "Boshqa", selectCategory: "Kategoriya",
+  expertAnswer: "Ekspert javobi", noAnswerYet: "Ekspert javobini kutmoqda", pending: "Ko'rib chiqilmoqda",
+  questionPosted: "Savol joylandi!",
+  mapTitle: "Mintaqaviy yordam markazlari", mapSubtitle: "Yoningizdan qo'llab-quvvatlash toping",
+  filterByCity: "Shahar bo'yicha filtr", centersNearby: "Yaqin markazlar",
+  schedule: "Ish vaqti", address: "Manzil", hotline: "Ishonch telefoni", staff: "Mutaxassislar",
+  call: "Qo'ng'iroq qilish", viewDetails: "Batafsil", noCentersFound: "Bu shaharda markazlar topilmadi",
+  calendarTitle: "Kalendar va profil", eventsTitle: "Tadbirlar va vebinarlar",
+  register: "Ro'yxatdan o'tish", registered: "Ro'yxatdan o'tildi ✓", spotsLeft: "o'rin qoldi",
+  profileTitle: "Profil", editProfile: "Profilni tahrirlash",
+  languageTitle: "Interfeys tili", apiKeyTitle: "OpenAI API-kaliti",
+  apiKeyDesc: "AI-murabbiyni ishga tushirish uchun ishlatiladi. Faqat qurilmangizda saqlanadi.",
+  saveChanges: "O'zgarishlarni saqlash", saved: "Saqlandi ✓", logout: "Hisobdan chiqish",
+  yourStats: "Faoliyatingiz", questionsAsked: "savol berildi", eventsRegistered: "tadbir",
+  showPasswordBtn: "Ko'rsatish", hidePasswordBtn: "Yashirish",
+  online: "onlayn", verified: "Tasdiqlangan", years: "yosh",
+  moodTrackerTitle: "Bugun o'zingizni qanday his qilyapsiz?", moodSaved: "Rahmat! Kayfiyat saqlandi",
+  weeklyActivityTitle: "Haftalik faollik", minutesLabel: "daq. o'rganildi",
+  skillMasteryTitle: "Mahorat", streakTitle: "kun ketma-ket", streakLabel: "Seriya",
+  securityLevel: "Xavfsizlik darajasi", learnedLabel: "O'rganildi", topicsFor: "Yosh guruhi uchun mavzular",
+  generateLesson: "Darsni yaratish", viewLesson: "Darsni ko'rish",
+  lessonGenerating: "AI dars yaratmoqda...", backToTopics: "Mavzularga qaytish",
+  completedLabel: "Yakunlandi", organizerLabel: "Tashkilotchi",
+  yourProgress: "Sizning rivojlanishingiz", noLessonsForAge: "Yoshingiz uchun darslar tez orada qo'shiladi",
+  mon: "Dush", tue: "Sesh", wed: "Chor", thu: "Pay", fri: "Jum", sat: "Shan", sun: "Yak"
+},
+tg: {
+  appName: "milu", tagline: "Ёрдамчии рақамии ҷавонони Осиёи Марказӣ",
+  welcomeBack: "Хуш омадед", joinUs: "Ба milu ҳамроҳ шавед",
+  signIn: "Воридшавӣ", signUp: "Бақайдгирӣ",
+  nickname: "Тахаллуси беном", nicknamePlaceholder: "Масалан: SnowLeopard_14",
+  password: "Рамз", passwordPlaceholder: "Рамзро ворид кунед",
+  age: "Синну сол", country: "Кишвар", city: "Шаҳр",
+  selectCountry: "Кишварро интихоб кунед", selectCity: "Шаҳрро интихоб кунед",
+  createAccount: "Сохтани ҳисоб", login: "Воридшавӣ ба ҳисоб",
+  alreadyHaveAccount: "Ҳисоб доред? Ворид шавед", dontHaveAccount: "Ҳисоб надоред? Бақайд гиред",
+  securityNote: "Маълумот танҳо дар дастгоҳи шумо нигоҳ дошта мешавад. Мо маълумоти шахсиро ҷамъ намекунем ва анонимии пурраро кафолат медиҳем.",
+  fillAllFields: "Лутфан ҳамаи майдонҳоро пур кунед",
+  navHome: "Асосӣ", navForum: "Форум", navMap: "Харита", navCalendar: "Профил",
+  greetingHi: "Салом",
+  tip1214: "🛡️ Бехатарӣ: ҳеҷ гоҳ маълумоти шахсиро бо шахсони ношинос дар онлайн мубодила накунед ва дар бораи паёмҳои шубҳанок ба калонсолон нақл кунед.",
+  tip1517: "🧠 Саломатии равонӣ: хоби мунтазам ва сӯҳбат бо шахсе, ки эътимод доред, сатҳи стрессро то 40% паст мекунад.",
+  tip1718: "💰 Саводнокии молиявӣ: қоидаи 50/30/20 — пулатонро ба эҳтиёҷот, хоҳишҳо ва пасандоз тақсим кунед.",
+  aiChatTitle: "Мураббии AI-и milu", aiChatSubtitle: "Ҳар суолеро пурсед — ман дар паҳлуи шумо",
+  askPlaceholder: "Саволи худро нависед...", send: "Фиристодан",
+  thinking: "Дар ҳоли навиштан...", aiWelcome: "Салом! Ман мураббии AI-и milu-и шумо ҳастам. Дар бораи саломатӣ, бехатарӣ, эҳсосот, пул пурсида метавонед ё танҳо сӯҳбат кунед. Ҳама чиз дар байни мо мемонад. 💬",
+  errorGeneric: "Хатогӣ рух дод. Лутфан аз нав кӯшиш кунед.",
+  errorNetwork: "Пайваст ба сервер нест. Интернетро тафтиш карда, аз нав кӯшиш кунед.",
+  errorAuth: "Хатогии калиди API. Калиди OpenAI-ро дар танзимоти профил тафтиш кунед.",
+  errorRate: "Ҳадди дархост расид ё бақияи калиди API тамом шуд.",
+  crisisAlertTitle: "⚠️ Муҳим: ба шумо ҳозир кӯмак лозим аст",
+  crisisAlertText: "Агар ба шумо сахт бошад ё дар бораи зарар расонидан ба худ фикр мекунед — шумо танҳо нестед. Ҳозир ба рақами зерин занг занед.",
+  moduleAnatomy: "Анатомия ва саломатӣ", moduleMental: "Мувозинати равонӣ",
+  moduleDigital: "Бехатарии рақамӣ", moduleFinance: "Саводнокии молиявӣ",
+  close: "Пӯшидан",
+  forumTitle: "Форуми беноми Q&A", forumSubtitle: "Савол пурсед — мутахассисон ҷавоб медиҳанд",
+  askQuestion: "Пурсидани савол", questionPlaceholder: "Чиро мехоҳед пурсед?",
+  submit: "Нашр кардан", categoryMental: "Психология", categoryHealth: "Саломатӣ",
+  categorySafety: "Бехатарӣ", categoryOther: "Дигар", selectCategory: "Категория",
+  expertAnswer: "Ҷавоби мутахассис", noAnswerYet: "Дар интизори ҷавоби мутахассис", pending: "Дар баррасӣ",
+  questionPosted: "Савол нашр шуд!",
+  mapTitle: "Марказҳои минтақавии кӯмак", mapSubtitle: "Дастгириро дар наздикии худ ёбед",
+  filterByCity: "Филтр аз рӯи шаҳр", centersNearby: "Марказҳои наздик",
+  schedule: "Соатҳои корӣ", address: "Суроға", hotline: "Хатти боварӣ", staff: "Мутахассисон",
+  call: "Занг задан", viewDetails: "Тафсилот", noCentersFound: "Дар ин шаҳр марказҳо ёфт нашуданд",
+  calendarTitle: "Тақвим ва профил", eventsTitle: "Чорабиниҳо ва вебинарҳо",
+  register: "Сабти ном", registered: "Сабт шуд ✓", spotsLeft: "ҷой мондааст",
+  profileTitle: "Профил", editProfile: "Таҳрири профил",
+  languageTitle: "Забони интерфейс", apiKeyTitle: "Калиди API-и OpenAI",
+  apiKeyDesc: "Барои кори мураббии AI истифода мешавад. Танҳо дар дастгоҳи шумо нигоҳ дошта мешавад.",
+  saveChanges: "Нигоҳ доштани тағйирот", saved: "Нигоҳ дошта шуд ✓", logout: "Баромадан аз ҳисоб",
+  yourStats: "Фаъолияти шумо", questionsAsked: "савол пурсида шуд", eventsRegistered: "чорабинӣ",
+  showPasswordBtn: "Нишон додан", hidePasswordBtn: "Пинҳон кардан",
+  online: "онлайн", verified: "Тасдиқшуда", years: "сола",
+  moodTrackerTitle: "Имрӯз худро чӣ гуна ҳис мекунед?", moodSaved: "Ташаккур! Кайфият нигоҳ дошта шуд",
+  weeklyActivityTitle: "Фаъолияти ҳафтагӣ", minutesLabel: "дақ. омӯхта шуд",
+  skillMasteryTitle: "Маҳорат", streakTitle: "рӯз паиҳам", streakLabel: "Силсила",
+  securityLevel: "Дараҷаи ҳифз", learnedLabel: "Омӯхта шуд", topicsFor: "Мавзуъҳо барои синну сол",
+  generateLesson: "Дарс сохтан", viewLesson: "Дарсро дидан",
+  lessonGenerating: "AI дарс месозад...", backToTopics: "Бозгашт ба мавзуъҳо",
+  completedLabel: "Анҷом ёфт", organizerLabel: "Ташкилкунанда",
+  yourProgress: "Пешрафти шумо", noLessonsForAge: "Дарсҳо барои синну соли шумо ба зудӣ илова мешаванд",
+  mon: "Дш", tue: "Сш", wed: "Чш", thu: "Пш", fri: "Ҷм", sat: "Шн", sun: "Яш"
+}
+};
+
+function t(key) {
+  const lang = translations[state.currentLanguage] || translations.ru;
+  return lang[key] !== undefined ? lang[key] : (translations.ru[key] || key);
+}
+
+const LANG_LABELS = { ru: 'Русский', en: 'English', kk: 'Қазақша', ky: 'Кыргызча', uz: "O'zbekcha", tg: 'Тоҷикӣ' };
+
+/* -------------------------------------------------------------------------
+   5. EDUCATIONAL MODULE CONTENT (4 modules x 6 languages)
+------------------------------------------------------------------------- */
+const MODULES = {
+  anatomy: {
+    icon: 'fa-heart-pulse', color: 'rose',
+    title: { ru: "Анатомия и здоровье", en: "Anatomy & Health", kk: "Анатомия және денсаулық", ky: "Анатомия жана ден соолук", uz: "Anatomiya va salomatlik", tg: "Анатомия ва саломатӣ" },
+    content: {
+      ru: "Подростковый возраст — время активных изменений в теле. Гормональные перестройки влияют на рост, кожу, настроение и энергию — это нормально. Важно высыпаться минимум 8-9 часов, пить достаточно воды и есть разнообразную пищу с белками, овощами и цельными злаками. Регулярная физическая активность (минимум 60 минут в день) укрепляет сердце и кости в период их активного роста. Если у тебя есть вопросы о теле, менструальном цикле, изменениях голоса или других процессах — это нормально спрашивать. Обращайся к школьной медсестре, семейному врачу или в молодёжный центр здоровья: там работают специалисты, которые ответят конфиденциально и без осуждения. Не стесняйся заботиться о своём теле — это твой единственный дом на всю жизнь.",
+      en: "Adolescence is a time of major physical change. Hormonal shifts affect growth, skin, mood, and energy — this is completely normal. Aim for at least 8-9 hours of sleep, drink enough water, and eat a varied diet with protein, vegetables, and whole grains. Regular physical activity (at least 60 minutes a day) strengthens your heart and bones while they are still developing. If you have questions about your body, menstrual cycle, voice changes, or other processes, it's okay to ask. Talk to a school nurse, family doctor, or youth health center — trained specialists there will answer confidentially and without judgment. Don't be afraid to take care of your body; it's the only home you'll have for life.",
+      kk: "Жасөспірім кезеңі — денедегі белсенді өзгерістер уақыты. Гормоналды өзгерістер өсуге, теріге, көңіл-күйге және энергияға әсер етеді — бұл қалыпты жағдай. Кемінде 8-9 сағат ұйықтау, жеткілікті су ішу және ақуызға, көкөністерге, дәнді дақылдарға бай әртүрлі тамақтану маңызды. Тұрақты дене белсенділігі (күніне кемінде 60 минут) белсенді өсу кезеңінде жүрек пен сүйектерді нығайтады. Денең, етеккір циклі, дауыс өзгерістері туралы сұрақтарың болса — сұрауға болады. Мектеп медбикесіне, отбасылық дәрігерге немесе жастар денсаулық орталығына жүгін: онда құпиялылықты сақтап, айыптаусыз жауап беретін мамандар жұмыс істейді. Денеңе қамқорлық жасаудан тартынба — бұл өмір бойы жалғыз үйің.",
+      ky: "Өспүрүм курагы — денедеги активдүү өзгөрүүлөр мезгили. Гормоналдык өзгөрүүлөр өсүшкө, теринин абалына, маанайга жана энергияга таасир этет — бул кадимки нерсе. Жок дегенде 8-9 саат уктоо, жетиштүү суу ичүү жана белокко, жашылчаларга, дан эгиндерине бай ар түрдүү тамактануу маанилүү. Туруктуу дене активдүүлүгү (күнүнө жок дегенде 60 мүнөт) активдүү өсүү мезгилинде жүрөктү жана сөөктөрдү бекемдейт. Денең, айыздык цикл, добуш өзгөрүүлөрү жөнүндө суроолоруң болсо — суроого болот. Мектеп медайымына, үй-бүлөлүк дарыгерге же жаштар ден соолук борборуна кайрыл: анда сырды сактап, айыптабай жооп берген адистер иштейт. Денеңе кам көрүүдөн тартынба — бул өмүр бою жападан жалгыз үйүң.",
+      uz: "O'smirlik davri — tanadagi faol o'zgarishlar davri. Gormonal o'zgarishlar o'sish, teri, kayfiyat va energiyaga ta'sir qiladi — bu tabiiy holat. Kamida 8-9 soat uxlash, yetarli suv ichish va oqsil, sabzavot, don mahsulotlariga boy turli xil ovqatlanish muhim. Muntazam jismoniy faollik (kuniga kamida 60 daqiqa) faol o'sish davrida yurak va suyaklarni mustahkamlaydi. Tanangiz, hayz siklingiz, ovoz o'zgarishlari haqida savollaringiz bo'lsa — so'rashingiz mumkin. Maktab hamshirasi, oilaviy shifokor yoki yoshlar salomatlik markaziga murojaat qiling: u yerda maxfiylikni saqlab, hukm qilmasdan javob beradigan mutaxassislar ishlaydi. Tanangizga g'amxo'rlik qilishdan tortinmang — bu butun umr yashaydigan yagona uyingiz.",
+      tg: "Наврасӣ — давраи тағйироти фаъоли ҷисм аст. Тағйироти гормонӣ ба афзоиш, пӯст, кайфият ва энергия таъсир мерасонанд — ин комилан муқаррарӣ аст. Ҳадди ақал 8-9 соат хоб рафтан, оби кофӣ нӯшидан ва ғизои гуногун бо сафеда, сабзавот ва ғалладонагиҳо хӯрдан муҳим аст. Фаъолияти ҷисмонии мунтазам (ҳадди ақал 60 дақиқа дар рӯз) дилу устухонҳоро дар давраи афзоиши фаъол мустаҳкам мекунад. Агар дар бораи ҷисм, давраи ҳайз, тағйироти овоз саволҳо доред — пурсидан аз ин хатогӣ нест. Ба ҳамшираи мактаб, духтури оилавӣ ё маркази саломатии ҷавонон муроҷиат кунед: дар он ҷо мутахассисоне кор мекунанд, ки махфиёна ва бидуни маҳкум ҷавоб медиҳанд. Аз нигоҳубини ҷисми худ наҳаросед — ин ягона хонаи шумо барои тамоми умр аст."
+    },
+    lessons: {
+      '12-14': [
+        { id: 'anatomy_12-14_0', title_ru: 'Что происходит с телом в переходном возрасте' },
+        { id: 'anatomy_12-14_1', title_ru: 'Гигиена и уход за собой' },
+        { id: 'anatomy_12-14_2', title_ru: 'Здоровый сон и питание' }
+      ],
+      '15-16': [
+        { id: 'anatomy_15-16_0', title_ru: 'Понимание своего тела и личных границ' },
+        { id: 'anatomy_15-16_1', title_ru: 'Репродуктивное здоровье: основы' },
+        { id: 'anatomy_15-16_2', title_ru: 'Спорт и физическая активность' }
+      ],
+      '17-18': [
+        { id: 'anatomy_17-18_0', title_ru: 'Половое здоровье и контрацепция' },
+        { id: 'anatomy_17-18_1', title_ru: 'Регулярные медицинские осмотры' },
+        { id: 'anatomy_17-18_2', title_ru: 'Психосоматика: связь тела и эмоций' }
+      ]
+    }
+  },
+  mental: {
+    icon: 'fa-brain', color: 'violet',
+    title: { ru: "Ментальный баланс", en: "Mental Balance", kk: "Психикалық тепе-теңдік", ky: "Психикалык тең салмактуулук", uz: "Ruhiy muvozanat", tg: "Мувозинати равонӣ" },
+    content: {
+      ru: "Эмоции — тревога, грусть, злость, радость — все они естественны и несут важную информацию о том, что происходит в твоей жизни. Подавлять их вредно: лучше научиться их распознавать и проживать здоровыми способами. Попробуй технику дыхания 4-7-8: вдох на 4 счёта, задержка на 7, выдох на 8 — она быстро снижает тревогу. Веди дневник эмоций, занимайся спортом, высыпайся и ограничивай время в соцсетях перед сном. Если грусть или тревога не проходят больше двух недель, мешают учёбе или общению — это повод обратиться к школьному психологу или в центр психического здоровья. Просить о помощи — это признак силы, а не слабости. Ты не обязан справляться со всем в одиночку.",
+      en: "Emotions — anxiety, sadness, anger, joy — are all natural and carry important information about what's happening in your life. Suppressing them is unhealthy; it's better to learn to recognize and process them in healthy ways. Try the 4-7-8 breathing technique: inhale for 4 counts, hold for 7, exhale for 8 — it quickly reduces anxiety. Keep an emotion journal, exercise, get enough sleep, and limit social media before bed. If sadness or anxiety lasts more than two weeks and interferes with school or relationships, it's a good reason to talk to a school psychologist or mental health center. Asking for help is a sign of strength, not weakness. You don't have to handle everything alone.",
+      kk: "Эмоциялар — мазасыздық, қайғы, ашу, қуаныш — олардың барлығы табиғи және өміріңде не болып жатқаны туралы маңызды ақпарат береді. Оларды басып тастау зиянды: оларды тануды және дұрыс жолмен өткізуді үйрену жақсы. 4-7-8 тыныс алу техникасын байқап көр: 4 санға дем ал, 7 санға ұста, 8 санға шығар — бұл мазасыздықты жылдам төмендетеді. Эмоциялар күнделігін жүргіз, спортпен айналыс, жеткілікті ұйықта және түнде әлеуметтік желілерде уақытты шектеле. Егер қайғы немесе мазасыздық екі аптадан артық созылып, оқуға немесе қарым-қатынасқа кедергі жасаса — бұл мектеп психологына немесе психикалық денсаулық орталығына жүгінудің себебі. Көмек сұрау — әлсіздіктің емес, күштіліктің белгісі. Барлығымен жалғыз күресуге міндетті емессің.",
+      ky: "Эмоциялар — тынчсыздануу, кайгы, ачуу, кубаныч — баары табигый жана жашооңдо эмне болуп жатканы жөнүндө маанилүү маалымат берет. Аларды басып коюу зыяндуу: аларды таанып, туура жол менен өткөрүүнү үйрөнгөн жакшы. 4-7-8 дем алуу техникасын байкап көр: 4 эсепке дем ал, 7 эсепке кармап тур, 8 эсепке чыгар — бул тынчсыздануду тез төмөндөтөт. Эмоциялар күндөлүгүн жүргүз, спорт менен алектен, жетиштүү укта жана түндө социалдык тармактарда убакытты чектеле. Эгер кайгы же тынчсыздануу эки жумадан ашык уланып, окууга же мамилеге тоскоол болсо — бул мектеп психологуна же психикалык ден соолук борборуна кайрылуунун себеби. Жардам сурап — алсыздыктын эмес, күчтүүлүктүн белгиси. Баарын жалгыз чечүүгө милдеттүү эмессиң.",
+      uz: "His-tuyg'ular — tashvish, g'am, jahl, quvonch — barchasi tabiiy va hayotingizda nima sodir bo'layotgani haqida muhim ma'lumot beradi. Ularni bosib qo'yish zararli: ularni tanish va sog'lom yo'l bilan boshdan kechirishni o'rganish yaxshiroq. 4-7-8 nafas olish texnikasini sinab ko'ring: 4 hisobga nafas oling, 7 hisobga ushlab turing, 8 hisobga chiqaring — bu tashvishni tezda kamaytiradi. His-tuyg'ular kundaligini yuriting, sport bilan shug'ullaning, yetarli uxlang va tunda ijtimoiy tarmoqlarda vaqtni cheklang. Agar g'am yoki tashvish ikki haftadan ortiq davom etsa va o'qish yoki munosabatlarga xalaqit bersa — bu maktab psixologiga yoki ruhiy salomatlik markaziga murojaat qilish sababi. Yordam so'rash — zaiflik emas, kuch belgisi. Hammasini yolg'iz hal qilishga majbur emassiz.",
+      tg: "Эҳсосот — изтироб, ғам, хашм, шодӣ — ҳама табиӣ буда, дар бораи он чи дар зиндагии шумо рух медиҳад, маълумоти муҳим медиҳанд. Пахш кардани онҳо зарарнок аст: беҳтар аст онҳоро шинохта, бо тарзи солим аз сар гузаронед. Техникаи нафаскашии 4-7-8-ро санҷед: 4 ҳисоб нафас гиред, 7 ҳисоб нигоҳ доред, 8 ҳисоб бароред — ин изтиробро зуд паст мекунад. Рӯзномаи эҳсосот нависед, варзиш кунед, хоби кофӣ бихобед ва вақти шабакаҳои иҷтимоиро пеш аз хоб маҳдуд кунед. Агар ғам ё изтироб зиёда аз ду ҳафта давом кунад ва ба таҳсил ё муносибатҳо халал расонад — ин сабаб барои муроҷиат ба психологи мактаб ё маркази саломатии равонӣ аст. Кӯмак пурсидан аломати қувват аст, на заъф. Шумо маҷбур нестед бо ҳама чиз танҳо мубориза баред."
+    },
+    lessons: {
+      '12-14': [
+        { id: 'mental_12-14_0', title_ru: 'Что такое эмоции и как их называть' },
+        { id: 'mental_12-14_1', title_ru: 'Как справляться со страхом и стрессом' },
+        { id: 'mental_12-14_2', title_ru: 'Дружба и конфликты со сверстниками' }
+      ],
+      '15-16': [
+        { id: 'mental_15-16_0', title_ru: 'Тревога перед экзаменами' },
+        { id: 'mental_15-16_1', title_ru: 'Самооценка и сравнение себя с другими' },
+        { id: 'mental_15-16_2', title_ru: 'Как поддержать друга в трудной ситуации' }
+      ],
+      '17-18': [
+        { id: 'mental_17-18_0', title_ru: 'Выгорание и как его избежать' },
+        { id: 'mental_17-18_1', title_ru: 'Планирование будущего без паники' },
+        { id: 'mental_17-18_2', title_ru: 'Когда стоит обратиться к психологу' }
+      ]
+    }
+  },
+  digital: {
+    icon: 'fa-shield-halved', color: 'sky',
+    title: { ru: "Цифровая безопасность", en: "Digital Safety", kk: "Цифрлық қауіпсіздік", ky: "Санарип коопсуздук", uz: "Raqamli xavfsizlik", tg: "Бехатарии рақамӣ" },
+    content: {
+      ru: "Интернет открывает огромные возможности, но требует осторожности. Никогда не отправляй личные фото, адрес, номер школы или пароли даже тем, кого хорошо знаешь онлайн. Используй разные надёжные пароли для разных аккаунтов и включай двухфакторную аутентификацию. Если незнакомец в сети просит встречу, деньги или интимные фото — это тревожный сигнал: прекрати общение и расскажи взрослому, которому доверяешь. Проверяй настройки приватности в соцсетях: закрытый профиль защищает от нежелательного внимания. Кибербуллинг — это тоже насилие: сохраняй скриншоты, блокируй обидчика и сообщай модераторам платформы или взрослым. Помни: то, что публикуется онлайн, может остаться там навсегда, поэтому думай, прежде чем постить.",
+      en: "The internet offers huge opportunities, but it requires caution. Never send personal photos, your address, school name, or passwords — even to people you feel you know well online. Use strong, unique passwords for different accounts and enable two-factor authentication. If a stranger online asks to meet, requests money, or asks for intimate photos, that's a warning sign — stop the conversation and tell a trusted adult. Check your privacy settings on social media: a private profile protects you from unwanted attention. Cyberbullying is also a form of abuse — save screenshots, block the person, and report it to platform moderators or a trusted adult. Remember: what you post online can stay there forever, so think before you post.",
+      kk: "Интернет үлкен мүмкіндіктер ашады, бірақ сақтықты талап етеді. Онлайнда жақсы білетін адамдарға да жеке фотоларды, мекенжайды, мектеп атын немесе құпия сөздерді ешқашан жіберме. Әр түрлі аккаунттар үшін әртүрлі күшті құпия сөздерді пайдалан және екі факторлы аутентификацияны қос. Егер желідегі бейтаныс адам кездесуді, ақшаны немесе интимдік фотоларды сұраса — бұл дабыл белгісі: сөйлесуді тоқтат және сенімді ересек адамға айт. Әлеуметтік желілердегі құпиялылық баптауларын тексер: жабық профиль қажетсіз назардан қорғайды. Кибербуллинг те зорлық-зомбылықтың түрі: скриншот сақта, кінәліні блоктап, платформа модераторларына немесе ересектерге хабарла. Есте сақта: онлайнда жарияланған нәрсе мәңгі қалуы мүмкін, сондықтан жариялаудан бұрын ойлан.",
+      ky: "Интернет чоң мүмкүнчүлүктөрдү ачат, бирок этияттыкты талап кылат. Онлайнда жакшы билген адамдарга да жеке сүрөттөрдү, дарегиңди, мектеп атын же сырсөздөрдү эч качан жөнөтпө. Ар кандай аккаунттар үчүн ар түрдүү күчтүү сырсөздөрдү колдон жана эки факторлуу аутентификацияны кош. Эгер тармактагы бейтааныш адам жолугушууну, акчаны же интимдик сүрөттөрдү сураса — бул тынчсыздандыруучу белги: сүйлөшүүнү токтот жана ишенген чоң кишиге айт. Социалдык тармактардагы жашыруундук жөндөөлөрүн текшер: жабык профиль каалабаган көнүлдөн коргойт. Кибербуллинг да зомбулуктун түрү: скриншот сакта, күнөөлүнү бөгөттөп, платформа модераторлоруна же чоңдорго кабарла. Эсиңде тут: онлайнда жарыяланган нерсе түбөлүккө калышы мүмкүн, ошондуктан жарыялоодон мурун ойлон.",
+      uz: "Internet katta imkoniyatlar ochadi, lekin ehtiyotkorlikni talab qiladi. Onlayn yaxshi bilgan odamlarga ham shaxsiy suratlar, manzil, maktab nomi yoki parollarni hech qachon yubormang. Turli hisoblar uchun turli kuchli parollardan foydalaning va ikki faktorli autentifikatsiyani yoqing. Agar tarmoqdagi notanish odam uchrashuvni, pulni yoki intim suratlarni so'rasa — bu ogohlantiruvchi belgi: suhbatni to'xtating va ishonchli kattaga ayting. Ijtimoiy tarmoqlardagi maxfiylik sozlamalarini tekshiring: yopiq profil keraksiz e'tibordan himoya qiladi. Kiberbulling ham zo'ravonlik turi: skrinshot saqlang, aybdorni bloklang va platforma moderatorlariga yoki kattalarga xabar bering. Esda tuting: onlaynda joylashtirilgan narsa abadiy qolishi mumkin, shuning uchun joylashtirishdan oldin o'ylang.",
+      tg: "Интернет имкониятҳои калон мекушояд, аммо эҳтиёткориро талаб мекунад. Ба одамоне, ки дар онлайн хуб мешиносед ҳам, ҳеҷ гоҳ суратҳои шахсӣ, суроға, номи мактаб ё рамзҳоро нафиристед. Барои ҳисобҳои гуногун рамзҳои қавии гуногун истифода баред ва аутентификатсияи дуфакторро фаъол кунед. Агар шахси ношинос дар шабака вохӯрӣ, пул ё суратҳои интимиро дархост кунад — ин аломати ҳушдор аст: сӯҳбатро қатъ кунед ва ба калонсоли боэътимод бигӯед. Танзимоти махфияти шабакаҳои иҷтимоиро тафтиш кунед: профили пӯшида аз таваҷҷуҳи нохоста ҳифз мекунад. Кибербуллинг низ як шакли зӯроварист: скриншотҳоро нигоҳ доред, гунаҳкорро манъ кунед ва ба модераторони платформа ё калонсолон хабар диҳед. Дар хотир доред: он чи дар онлайн нашр мешавад, метавонад то абад бимонад, пас пеш аз нашр фикр кунед."
+    },
+    lessons: {
+      '12-14': [
+        { id: 'digital_12-14_0', title_ru: 'Пароли и приватность: основы' },
+        { id: 'digital_12-14_1', title_ru: 'Как распознать фейковый аккаунт' },
+        { id: 'digital_12-14_2', title_ru: 'Экранное время и баланс' }
+      ],
+      '15-16': [
+        { id: 'digital_15-16_0', title_ru: 'Кибербуллинг: что делать' },
+        { id: 'digital_15-16_1', title_ru: 'Безопасное общение в чатах' },
+        { id: 'digital_15-16_2', title_ru: 'Как защитить личные данные' }
+      ],
+      '17-18': [
+        { id: 'digital_17-18_0', title_ru: 'Цифровой след и репутация онлайн' },
+        { id: 'digital_17-18_1', title_ru: 'Мошенничество в интернете' },
+        { id: 'digital_17-18_2', title_ru: 'Безопасность при онлайн-покупках' }
+      ]
+    }
+  },
+  finance: {
+    icon: 'fa-coins', color: 'amber',
+    title: { ru: "Финансовая грамотность", en: "Financial Literacy", kk: "Қаржылық сауаттылық", ky: "Каржылык сабаттуулук", uz: "Moliyaviy savodxonlik", tg: "Саводнокии молиявӣ" },
+    content: {
+      ru: "Управление деньгами — навык, который стоит развивать с юности. Правило 50/30/20 поможет распределить любой доход или карманные деньги: 50% на нужды (проезд, школьные принадлежности), 30% на желания (развлечения, хобби) и 20% откладывай в накопления. Заведи привычку записывать все траты хотя бы неделю — это покажет, куда реально уходят деньги. Откладывай небольшую сумму регулярно, даже 500 тенге в неделю — со временем это превращается в значимую сумму благодаря постоянству. Прежде чем сделать крупную покупку, подожди 48 часов — импульсивные желания часто проходят. Изучай базовые понятия: инфляция, проценты по вкладам, разница между потребностью и желанием. Финансовая независимость начинается с маленьких, но осознанных решений уже сегодня.",
+      en: "Managing money is a skill worth developing from a young age. The 50/30/20 rule helps you allocate any income or allowance: 50% for needs (transport, school supplies), 30% for wants (entertainment, hobbies), and 20% for savings. Get in the habit of tracking every expense for at least a week — it shows where your money actually goes. Save a small amount regularly, even a little each week — over time, consistency turns it into a meaningful sum. Before a big purchase, wait 48 hours; impulsive urges often fade. Learn basic concepts: inflation, savings interest, and the difference between a need and a want. Financial independence starts with small, mindful decisions today.",
+      kk: "Ақшаны басқару — жастайынан дамытуға тұрарлық дағды. 50/30/20 ережесі кез келген табысты немесе қалта ақшасын бөлуге көмектеседі: 50% қажеттіліктерге (жол ақысы, мектеп заттары), 30% қалауларға (ойын-сауық, хобби), ал 20% жинаққа. Кем дегенде бір апта барлық шығынды жазып отыруды әдетке айналдыр — бұл ақша нақты қайда кетіп жатқанын көрсетеді. Аз соманы тұрақты жина, тіпті аптасына 500 теңге — уақыт өте келе тұрақтылық арқасында бұл маңызды сомаға айналады. Үлкен сатып алу алдында 48 сағат күт — импульсивті қалаулар жиі өтіп кетеді. Негізгі ұғымдарды үйрен: инфляция, депозит бойынша пайыздар, қажеттілік пен қалау арасындағы айырмашылық. Қаржылық тәуелсіздік бүгіннен бастап шағын, бірақ саналы шешімдерден басталады.",
+      ky: "Акчаны башкаруу — жаштайынан өнүктүрүүгө татыктуу көндүм. 50/30/20 эрежеси каалаган кирешени же чөнтөк акчасын бөлүштүрүүгө жардам берет: 50% керектөөлөргө (жол акысы, мектеп буюмдары), 30% каалоолорго (көңүл ачуу, хобби), ал 20% топтомго. Жок дегенде бир жума бардык чыгашаны жазып жүрүүнү адат кыл — бул акча чын-чынына кайда кетип жатканын көрсөтөт. Аз сумманы туруктуу жый, атүгүл жумасына 500 тенге — убакыттын өтүшү менен туруктуулук аркасында бул маанилүү суммага айланат. Чоң сатып алуудан мурун 48 саат күт — импульсивдүү каалоолор көбүнчө өтүп кетет. Негизги түшүнүктөрдү үйрөн: инфляция, депозит боюнча пайыздар, керектөө менен каалоонун ортосундагы айырма. Каржылык көз карандысыздык бүгүндөн баштап кичине, бирок аң-сезимдүү чечимдерден башталат.",
+      uz: "Pulni boshqarish — yoshlikdan rivojlantirishga arziydigan ko'nikma. 50/30/20 qoidasi har qanday daromadni yoki cho'ntak pulini taqsimlashga yordam beradi: 50% ehtiyojlarga (yo'l haqi, maktab buyumlari), 30% istaklarga (ko'ngil ochish, hobbi), 20% esa jamg'armaga. Kamida bir hafta barcha xarajatlarni yozib borishni odat qiling — bu pul haqiqatan qayerga ketayotganini ko'rsatadi. Kichik summani muntazam jamg'aring, hatto haftasiga bir oz — vaqt o'tishi bilan barqarorlik tufayli bu muhim summaga aylanadi. Katta xarid qilishdan oldin 48 soat kuting — impulsiv istaklar ko'pincha o'tib ketadi. Asosiy tushunchalarni o'rganing: inflyatsiya, depozit bo'yicha foizlar, ehtiyoj va istak o'rtasidagi farq. Moliyaviy mustaqillik bugundan boshlab kichik, ammo ongli qarorlardan boshlanadi.",
+      tg: "Идоракунии пул — маҳорате, ки аз ҷавонӣ рушд додан арзанда аст. Қоидаи 50/30/20 ба тақсими ҳар гуна даромад ё пули ҷайбӣ кӯмак мекунад: 50% ба эҳтиёҷот (роҳкиро, лавозимоти мактабӣ), 30% ба хоҳишҳо (фароғат, шавқ), ва 20% ба пасандоз. Ҳадди ақал як ҳафта тамоми хароҷотро қайд кардан одат кунед — ин нишон медиҳад, ки пул воқеан ба куҷо меравад. Маблағи хурдро мунтазам пасандоз кунед, ҳатто дар як ҳафта каме — бо гузашти вақт устуворӣ онро ба маблағи назаррас табдил медиҳад. Пеш аз харидории калон 48 соат интизор шавед — хоҳишҳои импулсивӣ аксар вақт мегузаранд. Мафҳумҳои асосиро омӯзед: таваррум, фоизи амонат, фарқи миёни эҳтиёҷ ва хоҳиш. Истиқлолияти молиявӣ аз қарорҳои хурд, вале огоҳона имрӯз оғоз меёбад."
+    },
+    lessons: {
+      '12-14': [
+        { id: 'finance_12-14_0', title_ru: 'Что такое деньги и зачем откладывать' },
+        { id: 'finance_12-14_1', title_ru: 'Разница между "хочу" и "нужно"' },
+        { id: 'finance_12-14_2', title_ru: 'Как правильно тратить карманные деньги' }
+      ],
+      '15-16': [
+        { id: 'finance_15-16_0', title_ru: 'Как составить свой первый бюджет' },
+        { id: 'finance_15-16_1', title_ru: 'Банковская карта: как пользоваться безопасно' },
+        { id: 'finance_15-16_2', title_ru: 'Первые шаги к накоплениям' }
+      ],
+      '17-18': [
+        { id: 'finance_17-18_0', title_ru: 'Как создать свой банк (личный бюджет как бизнес)' },
+        { id: 'finance_17-18_1', title_ru: 'Как управлять деньгами' },
+        { id: 'finance_17-18_2', title_ru: 'Как зарабатывать деньги' }
+      ]
+    }
+  }
+};
+
+/* -------------------------------------------------------------------------
+   6. REGIONAL SUPPORT CENTERS (by city)
+------------------------------------------------------------------------- */
+const CENTERS = {
+  Almaty: [
+    { id: 'a1', name: 'Молодёжный центр здоровья "Just Support"', hours: 'Пн-Пт: 09:00–18:00, Сб: 10:00–14:00', address: 'ул. Абая, 52, Алматы', hotline: '+7 (727) 292-64-31', staff: ['Психолог — А. Жумабекова', 'Врач-педиатр — С. Ахметов', 'Y-PEER волонтёр — Д. Касымова'], verified: true, x: 42, y: 30 },
+    { id: 'a2', name: 'Кризисный центр для подростков', hours: 'Круглосуточно', address: 'пр. Достык, 105, Алматы', hotline: '150', staff: ['Кризисный консультант — М. Ибраева', 'Социальный работник — Р. Нурланов'], verified: true, x: 60, y: 55 },
+    { id: 'a3', name: 'Центр репродуктивного здоровья молодёжи', hours: 'Пн-Сб: 08:30–17:30', address: 'ул. Жандосова, 98, Алматы', hotline: '+7 (727) 394-12-08', staff: ['Гинеколог — Л. Сарсенова', 'Психолог — Б. Токтаров'], verified: true, x: 30, y: 65 }
+  ],
+  Astana: [
+    { id: 'as1', name: 'Молодёжный центр здоровья Астаны', hours: 'Пн-Пт: 09:00–18:00', address: 'пр. Мангилик Ел, 55, Астана', hotline: '+7 (7172) 21-14-53', staff: ['Психолог — Н. Абенова', 'Врач общей практики — Т. Кенжебаев'], verified: true, x: 45, y: 40 },
+    { id: 'as2', name: 'Кризисная линия поддержки', hours: 'Круглосуточно', address: 'ул. Кенесары, 25, Астана', hotline: '150', staff: ['Кризисный консультант — Ж. Оспанова'], verified: true, x: 60, y: 60 }
+  ],
+  Shymkent: [
+    { id: 'sh1', name: 'Центр поддержки подростков Шымкента', hours: 'Пн-Сб: 09:00–17:00', address: 'ул. Байтурсынова, 14, Шымкент', hotline: '+7 (7252) 53-24-10', staff: ['Психолог — А. Рахимова', 'Социальный педагог — К. Юсупов'], verified: true, x: 40, y: 45 }
+  ],
+  Semey: [
+    { id: 'se1', name: 'Молодёжный центр здоровья Семея', hours: 'Пн-Пт: 09:00–18:00', address: 'ул. Абая, 78, Семей', hotline: '+7 (7222) 52-31-40', staff: ['Психолог — О. Дюсенова', 'Врач-педиатр — Е. Смагулов'], verified: true, x: 50, y: 35 },
+    { id: 'se2', name: 'Служба доверия для детей и подростков', hours: 'Круглосуточно', address: 'ул. Ауэзова, 12, Семей', hotline: '150', staff: ['Кризисный консультант — Г. Мұратова'], verified: true, x: 35, y: 58 }
+  ],
+  Karaganda: [
+    { id: 'k1', name: 'Центр психического здоровья Караганды', hours: 'Пн-Пт: 08:30–17:30', address: 'ул. Ерубаева, 40, Караганда', hotline: '+7 (7212) 41-22-09', staff: ['Психиатр — В. Ким', 'Психолог — А. Садыкова'], verified: true, x: 55, y: 42 }
+  ],
+  Bishkek: [
+    { id: 'b1', name: 'Молодёжный центр здоровья Бишкека', hours: 'Пн-Пт: 09:00–18:00', address: 'ул. Чуй, 219, Бишкек', hotline: '+996 (312) 54-49-91', staff: ['Психолог — А. Осмонова', 'Врач — Т. Джумабеков'], verified: true, x: 48, y: 38 },
+    { id: 'b2', name: 'Кризисная линия для подростков', hours: 'Круглосуточно', address: 'ул. Киевская, 96, Бишкек', hotline: '117', staff: ['Кризисный консультант — Н. Токтогулова'], verified: true, x: 32, y: 60 }
+  ],
+  Osh: [
+    { id: 'o1', name: 'Центр поддержки молодёжи Оша', hours: 'Пн-Сб: 09:00–17:00', address: 'ул. Ленина, 25, Ош', hotline: '+996 (3222) 5-05-15', staff: ['Психолог — М. Абдуллаева'], verified: true, x: 42, y: 48 }
+  ],
+  'Jalal-Abad': [
+    { id: 'j1', name: 'Служба поддержки Джалал-Абада', hours: 'Пн-Пт: 09:00–17:00', address: 'ул. Токтогула, 8, Джалал-Абад', hotline: '+996 (3722) 5-04-33', staff: ['Социальный работник — Б. Эргешов'], verified: true, x: 38, y: 52 }
+  ],
+  Karakol: [
+    { id: 'ka1', name: 'Служба поддержки Каракола', hours: 'Пн-Пт: 09:00–17:00', address: 'ул. Гебзе, 3, Каракол', hotline: '+996 (3922) 5-31-20', staff: ['Психолог — С. Бекова'], verified: true, x: 60, y: 30 }
+  ],
+  Tashkent: [
+    { id: 't1', name: 'Республиканский центр психического здоровья', hours: 'Пн-Пт: 08:00–17:00', address: 'ул. Мирзо-Улугбека, 46, Ташкент', hotline: '+998 (71) 268-51-11', staff: ['Психиатр — Ф. Юлдашева', 'Психолог — Д. Рашидов'], verified: true, x: 44, y: 36 },
+    { id: 't2', name: 'Линия доверия "Ishonch telefoni"', hours: 'Круглосуточно', address: 'ул. Амира Темура, 60, Ташкент', hotline: '1146', staff: ['Кризисный консультант — Н. Каримова'], verified: true, x: 55, y: 58 }
+  ],
+  Samarkand: [
+    { id: 's1', name: 'Центр поддержки молодёжи Самарканда', hours: 'Пн-Сб: 09:00–17:00', address: 'ул. Регистан, 5, Самарканд', hotline: '+998 (66) 233-14-05', staff: ['Психолог — Г. Тошева'], verified: true, x: 40, y: 44 }
+  ],
+  Bukhara: [
+    { id: 'bu1', name: 'Центр поддержки Бухары', hours: 'Пн-Пт: 09:00–17:00', address: 'ул. Бахоуддина Накшбанди, 10, Бухара', hotline: '+998 (65) 221-30-18', staff: ['Социальный работник — И. Рахматов'], verified: true, x: 36, y: 50 }
+  ],
+  Namangan: [
+    { id: 'n1', name: 'Центр поддержки Намангана', hours: 'Пн-Пт: 09:00–17:00', address: 'ул. Алишера Навои, 22, Наманган', hotline: '+998 (69) 227-45-02', staff: ['Психолог — Х. Юсупова'], verified: true, x: 58, y: 40 }
+  ],
+  Dushanbe: [
+    { id: 'd1', name: 'Центр психического здоровья Душанбе', hours: 'Пн-Пт: 08:30–17:30', address: 'пр. Рудаки, 88, Душанбе', hotline: '+992 (37) 221-31-45', staff: ['Психиатр — М. Раҷабов', 'Психолог — Ш. Каримова'], verified: true, x: 46, y: 38 },
+    { id: 'd2', name: 'Республиканская линия психологической помощи', hours: 'Круглосуточно', address: 'ул. Айни, 45, Душанбе', hotline: '1213', staff: ['Кризисный консультант — П. Назарова'], verified: true, x: 60, y: 55 }
+  ],
+  Khujand: [
+    { id: 'kh1', name: 'Центр поддержки Худжанда', hours: 'Пн-Пт: 09:00–17:00', address: 'ул. Ленина, 15, Худжанд', hotline: '+992 (3422) 6-05-19', staff: ['Психолог — Ф. Юсупова'], verified: true, x: 40, y: 46 }
+  ],
+  Bokhtar: [
+    { id: 'bo1', name: 'Центр поддержки Бохтара', hours: 'Пн-Пт: 09:00–17:00', address: 'ул. Исмоили Сомони, 6, Бохтар', hotline: '+992 (3222) 2-14-27', staff: ['Социальный работник — Д. Холов'], verified: true, x: 34, y: 52 }
+  ],
+  Ashgabat: [
+    { id: 'as3', name: 'Центр психического здоровья Ашхабада', hours: 'Пн-Пт: 09:00–18:00', address: 'ул. Гёроглы, 32, Ашхабад', hotline: '+993 (12) 39-42-11', staff: ['Психолог — Б. Аннаева', 'Врач — О. Мередов'], verified: true, x: 44, y: 40 }
+  ],
+  Turkmenabat: [
+    { id: 'tu1', name: 'Центр поддержки Туркменабата', hours: 'Пн-Пт: 09:00–17:00', address: 'ул. Магтымгулы, 19, Туркменабат', hotline: '+993 (422) 5-11-08', staff: ['Психолог — Г. Атаева'], verified: true, x: 56, y: 44 }
+  ],
+  Mary: [
+    { id: 'm1', name: 'Центр поддержки Мары', hours: 'Пн-Пт: 09:00–17:00', address: 'ул. Гарашсызлык, 11, Мары', hotline: '+993 (522) 4-20-16', staff: ['Социальный работник — Р. Кулиев'], verified: true, x: 38, y: 48 }
+  ]
+};
+
+/* -------------------------------------------------------------------------
+   7. EVENTS DATA
+------------------------------------------------------------------------- */
+const EVENTS = [
+  { id: 'ev1', title_ru: 'Вебинар: "Как справляться со стрессом в школе"', date: '12 июля, 16:00', spots: 24, category: 'mental', icon: 'fa-comments', organizer: 'Y-PEER' },
+  { id: 'ev2', title_ru: 'Мастер-класс по финансовой грамотности для подростков', date: '18 июля, 15:00', spots: 18, category: 'finance', icon: 'fa-piggy-bank', organizer: 'MCZ' },
+  { id: 'ev3', title_ru: 'Тренинг "Безопасность в интернете"', date: '24 июля, 17:00', spots: 30, category: 'safety', icon: 'fa-lock', organizer: 'Y-PEER' },
+  { id: 'ev4', title_ru: 'Открытая встреча Y-PEER: разговор про эмоции', date: '2 августа, 14:00', spots: 15, category: 'mental', icon: 'fa-people-group', organizer: 'Y-PEER' },
+  { id: 'ev5', title_ru: 'Лекция врача: подростковое здоровье и питание', date: '9 августа, 16:30', spots: 20, category: 'health', icon: 'fa-apple-whole', organizer: 'MCZ' },
+  { id: 'ev6', title_ru: 'Групповая консультация: репродуктивное здоровье подростков', date: '15 августа, 11:00', spots: 12, category: 'health', icon: 'fa-house-medical', organizer: 'MCZ' },
+  { id: 'ev7', title_ru: 'Тренинг равных консультантов Y-PEER: навыки общения', date: '21 августа, 15:30', spots: 20, category: 'mental', icon: 'fa-people-group', organizer: 'Y-PEER' },
+  { id: 'ev8', title_ru: 'Вебинар МЦЗ: первая помощь при панической атаке', date: '28 августа, 17:00', spots: 25, category: 'mental', icon: 'fa-kit-medical', organizer: 'MCZ' }
+];
+
+/* -------------------------------------------------------------------------
+   8. UTILITY / PERSISTENCE
+------------------------------------------------------------------------- */
+function saveUser() {
+  try { localStorage.setItem('mapp_user', JSON.stringify(state.user)); } catch (e) {}
+}
+function saveKey() {
+  try { localStorage.setItem('mapp_openai_key', state.openaiKey); } catch (e) {}
+}
+function saveLang() {
+  try { localStorage.setItem('mapp_lang', state.currentLanguage); } catch (e) {}
+}
+function saveEvents() {
+  try { localStorage.setItem('mapp_events', JSON.stringify(state.registeredEvents)); } catch (e) {}
+}
+function saveCompletedLessons() {
+  try { localStorage.setItem('mapp_completed_lessons', JSON.stringify(state.completedLessonIds)); } catch (e) {}
+}
+function saveLessonContent() {
+  try { localStorage.setItem('mapp_lesson_content', JSON.stringify(state.lessonContent)); } catch (e) {}
+}
+function saveActivityLog() {
+  try { localStorage.setItem('mapp_activity_log', JSON.stringify(state.activityLog)); } catch (e) {}
+}
+function saveMoodLog() {
+  try { localStorage.setItem('mapp_mood_log', JSON.stringify(state.moodLog)); } catch (e) {}
+}
+
+/* --- Age bands & progress helpers --- */
+function getAgeBand(age) {
+  if (age <= 14) return '12-14';
+  if (age <= 16) return '15-16';
+  return '17-18';
+}
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+function logActivity(type) {
+  state.activityLog.push({ date: todayStr(), type: type });
+  saveActivityLog();
+}
+function getWeekDates() {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  return dates;
+}
+function computeWeeklyActivity() {
+  const weekDates = getWeekDates();
+  const counts = weekDates.map(d => state.activityLog.filter(a => a.date === d).length);
+  return { weekDates, counts };
+}
+function computeStreak() {
+  let streak = 0;
+  let cursor = new Date();
+  const activeDates = new Set(state.activityLog.map(a => a.date));
+  while (true) {
+    const dStr = cursor.toISOString().slice(0, 10);
+    if (activeDates.has(dStr)) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+function computeModuleProgress(moduleKey) {
+  const band = getAgeBand(state.user.age);
+  const lessons = (MODULES[moduleKey].lessons && MODULES[moduleKey].lessons[band]) || [];
+  const completed = lessons.filter(l => state.completedLessonIds.includes(l.id)).length;
+  return { completed: completed, total: lessons.length, percent: lessons.length ? Math.round((completed / lessons.length) * 100) : 0 };
+}
+function computeSecurityLevel() {
+  const band = getAgeBand(state.user.age);
+  let totalLessons = 0;
+  let totalCompleted = 0;
+  Object.keys(MODULES).forEach(key => {
+    const lessons = (MODULES[key].lessons && MODULES[key].lessons[band]) || [];
+    totalLessons += lessons.length;
+    totalCompleted += lessons.filter(l => state.completedLessonIds.includes(l.id)).length;
+  });
+  return totalLessons ? Math.round((totalCompleted / totalLessons) * 100) : 0;
+}
+function computeSkillMastery() {
+  const band = getAgeBand(state.user.age);
+  const percents = Object.keys(MODULES).map(key => computeModuleProgress(key).percent);
+  const sum = percents.reduce((a, b) => a + b, 0);
+  return percents.length ? Math.round(sum / percents.length) : 0;
+}
+
+const CRISIS_KEYWORDS = [
+  'суицид', 'самоубий', 'убить себя', 'не хочу жить', 'покончить с собой', 'причинить себе вред', 'резать себя', 'умереть',
+  'suicide', 'kill myself', 'end my life', 'self harm', 'self-harm', 'want to die', 'hurt myself',
+  'өз-өзіме қол жұмсау', 'өзімді өлтіру', 'өмір сүргім келмейді',
+  'өзүмдү өлтүрүү', 'жашагым келбейт',
+  'o\'z joniga qasd', 'o\'zimni o\'ldirish', 'yashagim kelmayapti',
+  'худкушӣ', 'худро куштан', 'зиндагӣ кардан намехоҳам'
+];
+
+function containsCrisisKeyword(text) {
+  const lower = text.toLowerCase();
+  return CRISIS_KEYWORDS.some(k => lower.includes(k.toLowerCase()));
+}
+
+function getCrisisInfo() {
+  const c = CRISIS[state.user.country] || CRISIS.Kazakhstan;
+  const localLine = c.local[state.user.city] || Object.values(c.local)[0];
+  return { national: c.national, text: c.text, local: localLine };
+}
+
+/* -------------------------------------------------------------------------
+   9. RENDER ROOT
+------------------------------------------------------------------------- */
+function render() {
+  const app = document.getElementById('app');
+  if (!state.user.authenticated) {
+    app.innerHTML = renderAuthScreen();
+    bindAuthEvents();
+    return;
+  }
+  app.innerHTML = renderMainApp();
+  bindMainEvents();
+}
+
+/* -------------------------------------------------------------------------
+   10. AUTH SCREEN
+------------------------------------------------------------------------- */
+function renderAuthScreen() {
+  const isSignUp = state.authMode === 'signup';
+  const countryOptions = Object.keys(GEO).map(c =>
+    `<option value="${c}" ${state.user.country === c ? 'selected' : ''}>${GEO[c].flag} ${c}</option>`
+  ).join('');
+  const cityOptions = GEO[state.user.country].cities.map(c =>
+    `<option value="${c}" ${state.user.city === c ? 'selected' : ''}>${c}</option>`
+  ).join('');
+  const ageOptions = [];
+  for (let a = 12; a <= 18; a++) {
+    ageOptions.push(`<option value="${a}" ${state.user.age === a ? 'selected' : ''}>${a} ${t('years')}</option>`);
+  }
+
+  return `
+  <div class="min-h-screen brand-dark-bg relative overflow-hidden">
+    <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-white/5"></div>
+    <div class="absolute top-40 -left-20 w-56 h-56 rounded-full bg-white/5"></div>
+    <div class="relative z-10 px-6 pt-14 pb-8">
+      <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center gap-2">
+          <div class="w-11 h-11 rounded-2xl accent-bg flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-shield-heart text-white text-lg"></i>
+          </div>
+          <div>
+            <p class="font-display font-800 text-white text-lg leading-none">milu</p>
+            <p class="text-white/50 text-[11px] mt-0.5">Central Asia</p>
+          </div>
+        </div>
+        ${renderLangSwitcher(true)}
+      </div>
+
+      <h1 class="font-display font-800 text-white text-3xl leading-tight mb-2">${isSignUp ? t('joinUs') : t('welcomeBack')}</h1>
+      <p class="text-white/60 text-sm mb-8">${t('tagline')}</p>
+    </div>
+
+    <div class="relative z-10 bg-slate-50 rounded-t-[2.5rem] px-6 pt-8 pb-10 min-h-[60vh]">
+      <div class="flex bg-slate-100 rounded-2xl p-1 mb-6">
+        <button id="btn-mode-signin" class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${!isSignUp ? 'bg-white shadow text-slate-950' : 'text-slate-500'}">${t('signIn')}</button>
+        <button id="btn-mode-signup" class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${isSignUp ? 'bg-white shadow text-slate-950' : 'text-slate-500'}">${t('signUp')}</button>
+      </div>
+
+      <div id="auth-error" class="hidden mb-4 danger-light-bg danger-text text-sm font-medium rounded-xl px-4 py-3"></div>
+
+      <form id="auth-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">${t('nickname')}</label>
+          <div class="relative">
+            <i class="fa-solid fa-user-ninja absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input id="input-nickname" type="text" placeholder="${t('nicknamePlaceholder')}" value="${state.user.nickname || ''}"
+              class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border-2 border-slate-200 focus:border-[var(--brand)] outline-none text-slate-950 font-medium placeholder:text-slate-400 placeholder:font-normal">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">${t('password')}</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input id="input-password" type="${state.showPassword ? 'text' : 'password'}" placeholder="${t('passwordPlaceholder')}" value="${state.user.password || ''}"
+              class="w-full pl-11 pr-24 py-3.5 rounded-2xl bg-white border-2 border-slate-200 focus:border-[var(--brand)] outline-none text-slate-950 font-medium placeholder:text-slate-400 placeholder:font-normal">
+            <button type="button" id="btn-toggle-pass" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold brand-text px-2 py-1">
+              ${state.showPassword ? t('hidePasswordBtn') : t('showPasswordBtn')}
+            </button>
+          </div>
+        </div>
+
+        ${isSignUp ? `
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">${t('age')}</label>
+          <div class="relative">
+            <i class="fa-solid fa-cake-candles absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10"></i>
+            <select id="input-age" class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border-2 border-slate-200 focus:border-[var(--brand)] outline-none text-slate-950 font-medium appearance-none">
+              ${ageOptions.join('')}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">${t('country')}</label>
+          <div class="relative">
+            <select id="input-country" class="w-full pl-4 pr-4 py-3.5 rounded-2xl bg-white border-2 border-slate-200 focus:border-[var(--brand)] outline-none text-slate-950 font-medium appearance-none">
+              ${countryOptions}
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">${t('city')}</label>
+          <div class="relative">
+            <i class="fa-solid fa-location-dot absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10"></i>
+            <select id="input-city" class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border-2 border-slate-200 focus:border-[var(--brand)] outline-none text-slate-950 font-medium appearance-none">
+              ${cityOptions}
+            </select>
+          </div>
+        </div>
+        ` : ''}
+
+        <button type="submit" class="w-full brand-bg text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-950/20 active:scale-[0.98] transition-all mt-2">
+          ${isSignUp ? t('createAccount') : t('login')}
+        </button>
+      </form>
+
+      <button id="btn-toggle-auth-mode" class="w-full text-center text-sm font-semibold brand-text mt-5">
+        ${isSignUp ? t('alreadyHaveAccount') : t('dontHaveAccount')}
+      </button>
+
+      <div class="mt-8 flex items-start gap-3 bg-slate-100 rounded-2xl p-4">
+        <i class="fa-solid fa-lock text-slate-500 mt-0.5"></i>
+        <p class="text-xs text-slate-600 leading-relaxed">${t('securityNote')}</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderLangSwitcher(dark) {
+  const langs = Object.keys(LANG_LABELS);
+  return `
+  <div class="relative">
+    <button id="btn-lang-toggle" class="flex items-center gap-1.5 ${dark ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-800'} rounded-full px-3 py-2 text-xs font-bold">
+      <span>🌐</span><span>${LANG_LABELS[state.currentLanguage]}</span>
+      <i class="fa-solid fa-chevron-down text-[9px] opacity-70"></i>
+    </button>
+    <div id="lang-dropdown" class="hidden absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 w-40 z-50">
+      ${langs.map(l => `
+        <button data-lang="${l}" class="lang-option w-full text-left px-4 py-2.5 text-sm font-medium ${state.currentLanguage === l ? 'brand-text bg-slate-50' : 'text-slate-800'} hover:bg-slate-50">
+          ${LANG_LABELS[l]}
+        </button>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
+function bindAuthEvents() {
+  document.getElementById('btn-lang-toggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('lang-dropdown').classList.toggle('hidden');
+  });
+  document.querySelectorAll('.lang-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.currentLanguage = btn.dataset.lang;
+      saveLang();
+      render();
+    });
+  });
+  document.addEventListener('click', () => {
+    const dd = document.getElementById('lang-dropdown');
+    if (dd) dd.classList.add('hidden');
+  }, { once: true });
+
+  document.getElementById('btn-mode-signin').addEventListener('click', () => { state.authMode = 'signin'; render(); });
+  document.getElementById('btn-mode-signup').addEventListener('click', () => { state.authMode = 'signup'; render(); });
+  document.getElementById('btn-toggle-auth-mode').addEventListener('click', () => {
+    state.authMode = state.authMode === 'signup' ? 'signin' : 'signup';
+    render();
+  });
+  document.getElementById('btn-toggle-pass').addEventListener('click', () => {
+    state.showPassword = !state.showPassword;
+    render();
+  });
+
+  if (state.authMode === 'signup') {
+    document.getElementById('input-country').addEventListener('change', (e) => {
+      state.user.country = e.target.value;
+      state.user.city = GEO[e.target.value].cities[0];
+      render();
+    });
+  }
+
+  document.getElementById('auth-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nickname = document.getElementById('input-nickname').value.trim();
+    const password = document.getElementById('input-password').value.trim();
+    const errBox = document.getElementById('auth-error');
+
+    if (!nickname || !password) {
+      errBox.textContent = t('fillAllFields');
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    state.user.nickname = nickname;
+    state.user.password = password;
+
+    if (state.authMode === 'signup') {
+      state.user.age = parseInt(document.getElementById('input-age').value, 10);
+      state.user.country = document.getElementById('input-country').value;
+      state.user.city = document.getElementById('input-city').value;
+    }
+
+    state.user.authenticated = true;
+    saveUser();
+    state.chatHistory = [{ role: 'assistant', content: t('aiWelcome') }];
+    render();
+  });
+}
+
+/* -------------------------------------------------------------------------
+   11. MAIN APP SHELL
+------------------------------------------------------------------------- */
+function renderMainApp() {
+  return `
+  <div class="flex flex-col h-screen">
+    <header class="sticky top-0 z-30 bg-slate-50/95 backdrop-blur border-b border-slate-200 px-5 pt-5 pb-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-xl brand-bg flex items-center justify-center">
+          <i class="fa-solid fa-shield-heart text-white text-sm"></i>
+        </div>
+        <span class="font-display font-800 text-slate-950 text-base">milu</span>
+      </div>
+      ${renderLangSwitcher(false)}
+    </header>
+
+    <main id="tab-content" class="flex-1 overflow-y-auto scrollarea pb-28">
+      ${renderTabContent()}
+    </main>
+
+    ${renderTabBar()}
+    ${state.activeModal ? renderModuleModal() : ''}
+    ${state.activeCenterId ? '' : ''}
+  </div>`;
+}
+
+function renderTabBar() {
+  const tabs = [
+    { id: 'home', icon: 'fa-house', label: t('navHome') },
+    { id: 'forum', icon: 'fa-comments', label: t('navForum') },
+    { id: 'map', icon: 'fa-map-location-dot', label: t('navMap') },
+    { id: 'calendar', icon: 'fa-user', label: t('navCalendar') }
+  ];
+  return `
+  <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 px-2 pt-2 pb-6 flex items-center justify-around z-40">
+    ${tabs.map(tab => `
+      <button data-tab="${tab.id}" class="tab-btn relative flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all ${state.currentTab === tab.id ? '' : 'opacity-50'}">
+        ${state.currentTab === tab.id ? '<div class="tab-active-indicator"></div>' : ''}
+        <i class="fa-solid ${tab.icon} text-lg ${state.currentTab === tab.id ? 'brand-text' : 'text-slate-500'}"></i>
+        <span class="text-[10px] font-bold ${state.currentTab === tab.id ? 'brand-text' : 'text-slate-500'}">${tab.label}</span>
+      </button>
+    `).join('')}
+  </nav>`;
+}
+
+function renderTabContent() {
+  switch (state.currentTab) {
+    case 'home': return renderHomeTab();
+    case 'forum': return renderForumTab();
+    case 'map': return renderMapTab();
+    case 'calendar': return renderCalendarTab();
+    default: return renderHomeTab();
+  }
+}
+
+function bindMainEvents() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.currentTab = btn.dataset.tab;
+      state.activeCenterId = null;
+      render();
+    });
+  });
+  document.getElementById('btn-lang-toggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('lang-dropdown').classList.toggle('hidden');
+  });
+  document.querySelectorAll('.lang-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.currentLanguage = btn.dataset.lang;
+      saveLang();
+      render();
+    });
+  });
+  document.addEventListener('click', () => {
+    const dd = document.getElementById('lang-dropdown');
+    if (dd) dd.classList.add('hidden');
+  }, { once: true });
+
+  bindTabSpecificEvents();
+}
+
+function bindTabSpecificEvents() {
+  if (state.currentTab === 'home') bindHomeEvents();
+  if (state.currentTab === 'forum') bindForumEvents();
+  if (state.currentTab === 'map') bindMapEvents();
+  if (state.currentTab === 'calendar') bindCalendarEvents();
+  if (state.activeModal) bindModalEvents();
+}
+
+/* -------------------------------------------------------------------------
+   12. TAB 1 — HOME / DASHBOARD / AI CHAT
+------------------------------------------------------------------------- */
+function ageTip() {
+  if (state.user.age >= 12 && state.user.age <= 14) return t('tip1214');
+  if (state.user.age >= 15 && state.user.age <= 17) return t('tip1517');
+  return t('tip1718');
+}
+
+function renderHomeTab() {
+  const modules = Object.keys(MODULES);
+  const moduleColors = { rose: 'bg-rose-50 text-rose-600', violet: 'bg-violet-50 text-violet-600', sky: 'bg-sky-50 text-sky-600', amber: 'bg-amber-50 text-amber-600' };
+  const security = computeSecurityLevel();
+  const mastery = computeSkillMastery();
+  const streak = computeStreak();
+  const weekly = computeWeeklyActivity();
+  const weeklyMinutes = weekly.counts.reduce((a, b) => a + b, 0) * 5;
+  const maxCount = Math.max(1, ...weekly.counts);
+  const dayLabels = [t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat'), t('sun')];
+  const todayIndex = (() => { const d = new Date().getDay(); return d === 0 ? 6 : d - 1; })();
+  const todayMood = state.moodLog[todayStr()];
+  const moods = [
+    { value: 1, emoji: '😞' }, { value: 2, emoji: '🙁' }, { value: 3, emoji: '😐' },
+    { value: 4, emoji: '🙂' }, { value: 5, emoji: '😄' }
+  ];
+
+  return `
+  <div class="px-5 pt-5 fade-in">
+    <div class="brand-bg rounded-3xl p-5 mb-4 relative overflow-hidden shadow-lg shadow-indigo-950/20">
+      <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10"></div>
+      <div class="flex items-start justify-between relative z-10">
+        <div>
+          <p class="text-white/80 text-sm font-medium">${t('greetingHi')},</p>
+          <h2 class="text-white font-display font-800 text-2xl mb-3">${state.user.nickname || ''} 👋</h2>
+        </div>
+        <div class="accent-bg rounded-2xl px-3 py-2 text-center shrink-0">
+          <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+          <p class="text-white font-display font-800 text-sm leading-none mt-1">${security}%</p>
+        </div>
+      </div>
+      <div class="bg-white/15 backdrop-blur rounded-2xl p-3.5 relative z-10">
+        <p class="text-white text-xs leading-relaxed font-medium">${ageTip()}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="accent2-bg rounded-3xl p-4 relative overflow-hidden">
+        <div class="absolute -bottom-6 -right-6 w-20 h-20 rounded-full bg-white/15"></div>
+        <i class="fa-solid fa-clock text-white/90 text-lg mb-3 relative z-10"></i>
+        <p class="text-white font-display font-800 text-xl leading-none relative z-10">${Math.floor(weeklyMinutes / 60)}h ${weeklyMinutes % 60}m</p>
+        <p class="text-white/85 text-[11px] font-semibold mt-1 relative z-10">${t('minutesLabel')}</p>
+      </div>
+      <div class="brand-dark-bg rounded-3xl p-4 relative overflow-hidden">
+        <div class="absolute -bottom-6 -right-6 w-20 h-20 rounded-full bg-white/10"></div>
+        <i class="fa-solid fa-chart-line text-white/90 text-lg mb-3 relative z-10"></i>
+        <p class="text-white font-display font-800 text-xl leading-none relative z-10">${mastery}%</p>
+        <p class="text-white/85 text-[11px] font-semibold mt-1 relative z-10">${t('skillMasteryTitle')}</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm mb-4">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-slate-950 font-bold text-sm">${t('weeklyActivityTitle')}</p>
+        <span class="flex items-center gap-1.5 accent-light-bg accent-text text-[11px] font-bold px-2.5 py-1 rounded-full">
+          <i class="fa-solid fa-fire"></i> ${streak} ${t('streakTitle')}
+        </span>
+      </div>
+      <div class="flex items-end h-24 gap-2">
+        ${weekly.counts.map((c, i) => `
+          <div class="bar-col">
+            <div class="bar-fill ${i === todayIndex ? 'bar-today' : ''}" style="height:${Math.max(8, Math.round((c / maxCount) * 100))}%"></div>
+            <span class="text-[9px] font-bold ${i === todayIndex ? 'brand-text' : 'text-slate-400'}">${dayLabels[i]}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm mb-5">
+      <p class="text-slate-950 font-bold text-sm mb-3">${t('moodTrackerTitle')}</p>
+      <div class="flex items-center justify-between">
+        ${moods.map(mo => `
+          <button data-mood="${mo.value}" class="mood-btn text-3xl ${todayMood === mo.value ? 'mood-selected' : 'opacity-60'}">${mo.emoji}</button>
+        `).join('')}
+      </div>
+      <div id="mood-toast" class="hidden mt-3 brand-light-bg brand-text text-xs font-bold rounded-xl px-3 py-2 text-center"></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 mb-5">
+      ${modules.map(key => {
+        const m = MODULES[key];
+        const progress = computeModuleProgress(key);
+        return `
+        <button data-module="${key}" class="module-card bg-white rounded-3xl border border-slate-100 p-4 shadow-sm active:scale-[0.98] transition-all text-left">
+          <div class="w-10 h-10 rounded-2xl ${moduleColors[m.color]} flex items-center justify-center mb-3">
+            <i class="fa-solid ${m.icon}"></i>
+          </div>
+          <p class="text-slate-950 font-bold text-sm leading-tight mb-2.5">${m.title[state.currentLanguage] || m.title.ru}</p>
+          <div class="progress-track mb-1.5"><div class="progress-fill" style="width:${progress.percent}%"></div></div>
+          <p class="text-slate-400 text-[10px] font-bold">${t('learnedLabel')}: ${progress.completed}/${progress.total}</p>
+        </button>`;
+      }).join('')}
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-8">
+      <div class="brand-bg px-5 py-4 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+          <i class="fa-solid fa-robot text-white"></i>
+        </div>
+        <div>
+          <p class="text-white font-bold text-sm">${t('aiChatTitle')}</p>
+          <p class="text-white/70 text-[11px]">${t('aiChatSubtitle')}</p>
+        </div>
+      </div>
+
+      <div id="chat-messages" class="px-4 py-4 space-y-3 max-h-[420px] overflow-y-auto scrollarea">
+        ${renderChatMessages()}
+      </div>
+
+      ${state.chatError ? `<div class="mx-4 mb-3 danger-light-bg danger-text text-xs font-semibold rounded-xl px-3 py-2.5">${state.chatError}</div>` : ''}
+
+      <form id="chat-form" class="flex items-center gap-2 px-4 pb-4 pt-1">
+        <input id="chat-input" type="text" placeholder="${t('askPlaceholder')}" ${state.chatLoading ? 'disabled' : ''}
+          class="flex-1 bg-slate-100 rounded-2xl px-4 py-3 text-sm text-slate-950 font-medium outline-none focus:ring-2 focus:ring-[var(--brand)] disabled:opacity-50">
+        <button type="submit" ${state.chatLoading ? 'disabled' : ''} class="w-11 h-11 shrink-0 accent-bg rounded-2xl flex items-center justify-center text-white disabled:opacity-50 active:scale-95 transition-all">
+          <i class="fa-solid fa-paper-plane text-sm"></i>
+        </button>
+      </form>
+    </div>
+  </div>`;
+}
+
+function renderChatMessages() {
+  let html = '';
+  state.chatHistory.forEach(msg => {
+    if (msg.role === 'crisis') {
+      const crisis = getCrisisInfo();
+      html += `
+      <div class="danger-light-bg rounded-2xl p-4 fade-in border-2 border-red-200">
+        <p class="danger-text font-bold text-sm mb-1">${t('crisisAlertTitle')}</p>
+        <p class="text-slate-800 text-xs leading-relaxed mb-3">${t('crisisAlertText')}</p>
+        <div class="bg-white rounded-xl p-3 space-y-1.5">
+          <p class="text-slate-950 text-sm font-bold flex items-center gap-2"><i class="fa-solid fa-phone danger-text"></i> ${crisis.national} — ${crisis.text}</p>
+          <p class="text-slate-700 text-xs">${crisis.local}</p>
+        </div>
+      </div>`;
+    } else if (msg.role === 'user') {
+      html += `
+      <div class="flex justify-end fade-in">
+        <div class="brand-bg text-white rounded-2xl rounded-tr-sm px-4 py-2.5 max-w-[80%] text-sm font-medium">${escapeHtml(msg.content)}</div>
+      </div>`;
+    } else {
+      html += `
+      <div class="flex justify-start fade-in">
+        <div class="bg-slate-100 text-slate-950 rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[80%] text-sm leading-relaxed">${escapeHtml(msg.content)}</div>
+      </div>`;
+    }
+  });
+  if (state.chatLoading) {
+    html += `
+    <div class="flex justify-start fade-in">
+      <div class="bg-slate-100 rounded-2xl rounded-tl-sm px-4 py-3">
+        <div class="dot-bounce"><span></span><span></span><span></span></div>
+      </div>
+    </div>`;
+  }
+  return html;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function bindHomeEvents() {
+  document.querySelectorAll('.module-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.activeModal = btn.dataset.module;
+      state.activeLessonId = null;
+      state.lessonError = '';
+      render();
+    });
+  });
+
+  document.querySelectorAll('.mood-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const value = parseInt(btn.dataset.mood, 10);
+      state.moodLog[todayStr()] = value;
+      saveMoodLog();
+      logActivity('mood');
+      render();
+      setTimeout(() => {
+        const toast = document.getElementById('mood-toast');
+        if (toast) {
+          toast.textContent = t('moodSaved');
+          toast.classList.remove('hidden');
+          setTimeout(() => toast.classList.add('hidden'), 2200);
+        }
+      }, 30);
+    });
+  });
+
+  const chatForm = document.getElementById('chat-form');
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || state.chatLoading) return;
+
+    state.chatError = '';
+    state.chatHistory.push({ role: 'user', content: text });
+    logActivity('chat');
+
+    if (containsCrisisKeyword(text)) {
+      state.chatHistory.push({ role: 'crisis', content: '' });
+    }
+
+    input.value = '';
+    state.chatLoading = true;
+    render();
+    scrollChatToBottom();
+
+    try {
+      const reply = await callOpenAI(text);
+      state.chatHistory.push({ role: 'assistant', content: reply });
+    } catch (err) {
+      state.chatError = err.message || t('errorGeneric');
+    }
+    state.chatLoading = false;
+    render();
+    scrollChatToBottom();
+  });
+
+  const chatBox = document.getElementById('chat-messages');
+  if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function scrollChatToBottom() {
+  setTimeout(() => {
+    const chatBox = document.getElementById('chat-messages');
+    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+  }, 50);
+}
+
+async function callOpenAI(userText) {
+  const crisis = getCrisisInfo();
+  const langName = LANG_LABELS[state.currentLanguage];
+  const systemPrompt = `You are "milu", an empathetic, highly secure digital mentor for adolescents (ages 12-18) in Central Asia (Kazakhstan, Kyrgyzstan, Uzbekistan, Tajikistan, Turkmenistan). You provide supportive, age-appropriate guidance on physical health, mental wellbeing, digital safety, and financial literacy. You are warm, non-judgmental, culturally sensitive, and never share the user's information with anyone. You always answer in ${langName}, matching the user's language.
+
+The user you are speaking with is ${state.user.age} years old, located in ${state.user.city}, ${state.user.country}.
+
+CRITICAL SAFETY PROTOCOL: If the user's message contains any indication of self-harm, suicidal ideation, severe depression, or acute crisis, you MUST immediately and clearly provide this emergency information as the first part of your response, in ${langName}: the national helpline number "${crisis.national}" (${crisis.text}), and this local resource: "${crisis.local}". Encourage them to reach out to a trusted adult or call immediately. Do not lecture; be warm and direct. After providing this information, offer brief, gentle emotional support.
+
+For all other topics, give clear, accurate, encouraging, and age-appropriate answers. Keep responses concise (3-6 sentences) unless the user asks for more detail. Never provide medical diagnoses, legal advice, or explicit content. Always encourage talking to trusted adults, teachers, or professionals for serious concerns.`;
+
+  const messages = [{ role: 'system', content: systemPrompt }];
+  state.chatHistory.forEach(m => {
+    if (m.role === 'user' || m.role === 'assistant') {
+      messages.push({ role: m.role, content: m.content });
+    }
+  });
+
+  let response;
+  try {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + state.openaiKey
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: messages,
+        max_tokens: 500,
+        temperature: 0.7
+      })
+    });
+  } catch (networkErr) {
+    throw new Error(t('errorNetwork'));
+  }
+
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(t('errorAuth'));
+    }
+    if (response.status === 429) {
+      throw new Error(t('errorRate'));
+    }
+    let detail = '';
+    try {
+      const errJson = await response.json();
+      detail = errJson.error && errJson.error.message ? errJson.error.message : '';
+    } catch (e) {}
+    throw new Error(t('errorGeneric') + (detail ? ' (' + detail + ')' : ''));
+  }
+
+  const data = await response.json();
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error(t('errorGeneric'));
+  }
+  return data.choices[0].message.content.trim();
+}
+
+async function generateLessonContent(moduleKey, band, lessonTitle) {
+  const langName = LANG_LABELS[state.currentLanguage];
+  const moduleTitle = MODULES[moduleKey].title[state.currentLanguage] || MODULES[moduleKey].title.ru;
+  const systemPrompt = `You are "milu", an educational content generator building short interactive micro-lessons for adolescents in Central Asia. Generate a lesson in ${langName} on the topic "${lessonTitle}", which is part of the "${moduleTitle}" module, for a learner in the ${band} age range located in ${state.user.city}, ${state.user.country}. Structure your response as plain text with these clearly separated parts: a short engaging introduction (2-3 sentences), then 3 to 4 key learning points each starting with a "•" bullet on its own line, then one short reflective question at the end starting with "❓". Keep the tone warm, age-appropriate, encouraging, culturally sensitive, and free of any medical diagnosis, legal advice, or explicit content. Do not use markdown headers or asterisks for bold. Keep the whole lesson under 220 words.`;
+
+  let response;
+  try {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + state.openaiKey
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Generate the lesson now: "${lessonTitle}"` }
+        ],
+        max_tokens: 500,
+        temperature: 0.7
+      })
+    });
+  } catch (networkErr) {
+    throw new Error(t('errorNetwork'));
+  }
+
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) throw new Error(t('errorAuth'));
+    if (response.status === 429) throw new Error(t('errorRate'));
+    let detail = '';
+    try {
+      const errJson = await response.json();
+      detail = errJson.error && errJson.error.message ? errJson.error.message : '';
+    } catch (e) {}
+    throw new Error(t('errorGeneric') + (detail ? ' (' + detail + ')' : ''));
+  }
+
+  const data = await response.json();
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error(t('errorGeneric'));
+  }
+  return data.choices[0].message.content.trim();
+}
+
+/* -------------------------------------------------------------------------
+   13. MODULE MODAL
+------------------------------------------------------------------------- */
+function renderModuleModal() {
+  const m = MODULES[state.activeModal];
+  const moduleColors = { rose: 'bg-rose-50 text-rose-600', violet: 'bg-violet-50 text-violet-600', sky: 'bg-sky-50 text-sky-600', amber: 'bg-amber-50 text-amber-600' };
+  const band = getAgeBand(state.user.age);
+  const lessons = (m.lessons && m.lessons[band]) || [];
+  const progress = computeModuleProgress(state.activeModal);
+
+  return `
+  <div id="modal-overlay" class="fixed inset-0 bg-slate-950/60 z-50 flex items-end max-w-md mx-auto">
+    <div class="pop-in bg-white rounded-t-[2.5rem] w-full max-h-[85vh] overflow-y-auto scrollarea">
+      <div class="sticky top-0 bg-white px-6 pt-6 pb-4 border-b border-slate-100 flex items-start justify-between z-10">
+        <div class="flex items-center gap-3">
+          ${state.activeLessonId ? `
+          <button id="btn-back-to-topics" class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+            <i class="fa-solid fa-arrow-left text-sm"></i>
+          </button>` : `
+          <div class="w-11 h-11 rounded-2xl ${moduleColors[m.color]} flex items-center justify-center shrink-0">
+            <i class="fa-solid ${m.icon} text-lg"></i>
+          </div>`}
+          <h3 class="font-display font-800 text-slate-950 text-lg leading-tight">${m.title[state.currentLanguage] || m.title.ru}</h3>
+        </div>
+        <button id="btn-close-modal" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      ${state.activeLessonId ? renderLessonDetailView(state.activeModal, band, lessons) : renderLessonListView(m, band, lessons, progress, moduleColors)}
+
+      <div class="px-6 pb-8 pt-2">
+        <button id="btn-close-modal-2" class="w-full brand-bg text-white font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all">${t('close')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderLessonListView(m, band, lessons, progress, moduleColors) {
+  return `
+  <div class="px-6 pt-5">
+    <p class="text-slate-700 text-sm leading-relaxed mb-5">${m.content[state.currentLanguage] || m.content.ru}</p>
+
+    <div class="bg-slate-50 rounded-2xl p-4 mb-5">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-slate-950 font-bold text-xs uppercase tracking-wide">${t('yourProgress')}</p>
+        <p class="text-slate-950 font-bold text-xs">${progress.completed}/${progress.total} · ${progress.percent}%</p>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${progress.percent}%"></div></div>
+    </div>
+
+    <p class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-3">${t('topicsFor')}: ${band} ${t('years')}</p>
+
+    ${lessons.length === 0 ? `
+      <div class="bg-slate-50 rounded-2xl p-6 text-center mb-4">
+        <p class="text-slate-500 text-sm font-medium">${t('noLessonsForAge')}</p>
+      </div>
+    ` : `
+    <div class="space-y-3 mb-2">
+      ${lessons.map(l => {
+        const isDone = state.completedLessonIds.includes(l.id);
+        const hasContent = !!state.lessonContent[l.id];
+        const isLoading = state.lessonLoadingId === l.id;
+        return `
+        <button data-lesson="${l.id}" data-title="${escapeHtml(l.title_ru)}" class="lesson-topic-btn w-full text-left bg-white border-2 ${isDone ? 'border-emerald-200' : 'border-slate-100'} rounded-2xl p-4 flex items-center justify-between gap-3 active:scale-[0.98] transition-all" ${isLoading ? 'disabled' : ''}>
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 h-8 rounded-full ${isDone ? 'bg-emerald-500' : 'bg-slate-100'} flex items-center justify-center shrink-0">
+              <i class="fa-solid ${isDone ? 'fa-check text-white' : 'fa-book-open text-slate-400'} text-xs"></i>
+            </div>
+            <p class="text-slate-950 font-semibold text-sm leading-snug">${escapeHtml(l.title_ru)}</p>
+          </div>
+          <span class="shrink-0 text-[11px] font-bold ${isDone ? 'text-emerald-600' : 'brand-text'}">
+            ${isLoading ? '<span class="dot-bounce"><span></span><span></span><span></span></span>' : (hasContent ? t('viewLesson') : t('generateLesson'))}
+          </span>
+        </button>`;
+      }).join('')}
+    </div>`}
+    ${state.lessonError ? `<div class="mt-3 danger-light-bg danger-text text-xs font-semibold rounded-xl px-3 py-2.5">${state.lessonError}</div>` : ''}
+  </div>`;
+}
+
+function renderLessonDetailView(moduleKey, band, lessons) {
+  const lesson = lessons.find(l => l.id === state.activeLessonId);
+  const content = state.lessonContent[state.activeLessonId] || '';
+  const isDone = state.completedLessonIds.includes(state.activeLessonId);
+  return `
+  <div class="px-6 pt-5">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-[10px] font-bold uppercase tracking-wide brand-light-bg brand-text px-2.5 py-1 rounded-full">${band} ${t('years')}</span>
+      ${isDone ? `<span class="text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> ${t('completedLabel')}</span>` : ''}
+    </div>
+    <h4 class="font-display font-800 text-slate-950 text-lg leading-snug mb-4">${escapeHtml(lesson ? lesson.title_ru : '')}</h4>
+    <div class="bg-slate-50 rounded-2xl p-5">
+      <p class="text-slate-800 text-[15px] leading-relaxed whitespace-pre-line">${escapeHtml(content)}</p>
+    </div>
+  </div>`;
+}
+
+function bindModalEvents() {
+  const overlay = document.getElementById('modal-overlay');
+  const close = () => { state.activeModal = null; state.activeLessonId = null; state.lessonError = ''; render(); };
+  document.getElementById('btn-close-modal').addEventListener('click', close);
+  document.getElementById('btn-close-modal-2').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  const backBtn = document.getElementById('btn-back-to-topics');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => { state.activeLessonId = null; render(); });
+  }
+
+  document.querySelectorAll('.lesson-topic-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const lessonId = btn.dataset.lesson;
+      const title = btn.dataset.title;
+      state.lessonError = '';
+
+      if (state.lessonContent[lessonId]) {
+        state.activeLessonId = lessonId;
+        render();
+        return;
+      }
+
+      const band = getAgeBand(state.user.age);
+      state.lessonLoadingId = lessonId;
+      render();
+
+      try {
+        const content = await generateLessonContent(state.activeModal, band, title);
+        state.lessonContent[lessonId] = content;
+        saveLessonContent();
+        if (!state.completedLessonIds.includes(lessonId)) {
+          state.completedLessonIds.push(lessonId);
+          saveCompletedLessons();
+          logActivity('lesson');
+        }
+        state.activeLessonId = lessonId;
+      } catch (err) {
+        state.lessonError = err.message || t('errorGeneric');
+      }
+      state.lessonLoadingId = null;
+      render();
+    });
+  });
+}
+
+/* -------------------------------------------------------------------------
+   14. TAB 2 — FORUM
+------------------------------------------------------------------------- */
+function renderForumTab() {
+  const categoryMeta = {
+    mental: { label: t('categoryMental'), color: 'bg-violet-500', bg: 'bg-violet-50', text: 'text-violet-700' },
+    health: { label: t('categoryHealth'), color: 'bg-rose-500', bg: 'bg-rose-50', text: 'text-rose-700' },
+    safety: { label: t('categorySafety'), color: 'bg-sky-500', bg: 'bg-sky-50', text: 'text-sky-700' },
+    other: { label: t('categoryOther'), color: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700' }
+  };
+
+  return `
+  <div class="px-5 pt-5 fade-in">
+    <h2 class="font-display font-800 text-slate-950 text-xl mb-1">${t('forumTitle')}</h2>
+    <p class="text-slate-500 text-sm mb-5">${t('forumSubtitle')}</p>
+
+    <div class="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm mb-6">
+      <p class="text-slate-950 font-bold text-sm mb-3">${t('askQuestion')}</p>
+      <form id="forum-form" class="space-y-3">
+        <textarea id="forum-question-input" rows="3" placeholder="${t('questionPlaceholder')}"
+          class="w-full bg-slate-100 rounded-2xl px-4 py-3 text-sm text-slate-950 font-medium outline-none focus:ring-2 focus:ring-[var(--brand)] resize-none"></textarea>
+        <select id="forum-category-select" class="w-full bg-slate-100 rounded-2xl px-4 py-3 text-sm text-slate-950 font-medium outline-none appearance-none">
+          <option value="mental">${categoryMeta.mental.label}</option>
+          <option value="health">${categoryMeta.health.label}</option>
+          <option value="safety">${categoryMeta.safety.label}</option>
+          <option value="other">${categoryMeta.other.label}</option>
+        </select>
+        <button type="submit" class="w-full brand-bg text-white font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all">${t('submit')}</button>
+      </form>
+    </div>
+
+    <div id="forum-toast" class="hidden brand-light-bg brand-text text-sm font-bold rounded-2xl px-4 py-3 mb-4 text-center"></div>
+
+    <div class="space-y-4 pb-4">
+      ${state.forumQuestions.slice().reverse().map(q => {
+        const cat = categoryMeta[q.category] || categoryMeta.other;
+        return `
+        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden fade-in">
+          <div class="h-1.5 ${cat.color}"></div>
+          <div class="p-5">
+            <div class="flex items-center justify-between mb-2.5">
+              <span class="${cat.bg} ${cat.text} text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">${cat.label}</span>
+              ${q.answered
+                ? `<span class="text-[10px] font-bold text-emerald-600 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> ${t('expertAnswer')}</span>`
+                : `<span class="text-[10px] font-bold text-amber-600 flex items-center gap-1"><i class="fa-solid fa-clock"></i> ${t('pending')}</span>`}
+            </div>
+            <p class="text-slate-950 font-semibold text-sm leading-snug mb-3">${escapeHtml(q.text_ru)}</p>
+            ${q.answered ? `
+              <div class="${cat.bg} rounded-2xl p-3.5">
+                <p class="text-slate-800 text-sm leading-relaxed mb-2">${escapeHtml(q.answer)}</p>
+                <p class="${cat.text} text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-certificate"></i> ${escapeHtml(q.expert)}</p>
+              </div>
+            ` : `
+              <div class="bg-slate-50 rounded-2xl p-3.5 flex items-center gap-2">
+                <i class="fa-solid fa-hourglass-half text-slate-400"></i>
+                <p class="text-slate-500 text-xs font-medium">${t('noAnswerYet')}</p>
+              </div>
+            `}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function bindForumEvents() {
+  document.getElementById('forum-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('forum-question-input');
+    const category = document.getElementById('forum-category-select').value;
+    const text = input.value.trim();
+    if (!text) return;
+
+    state.forumQuestions.push({
+      id: state.nextQuestionId++,
+      text_ru: text,
+      category: category,
+      answered: false,
+      answer: '',
+      expert: ''
+    });
+    logActivity('forum');
+
+    render();
+    const toast = document.getElementById('forum-toast');
+    if (toast) {
+      toast.textContent = t('questionPosted');
+      toast.classList.remove('hidden');
+      setTimeout(() => { toast.classList.add('hidden'); }, 2500);
+    }
+  });
+}
+
+/* -------------------------------------------------------------------------
+   15. TAB 3 — MAP / REGIONAL SERVICES
+------------------------------------------------------------------------- */
+function renderMapTab() {
+  const cities = GEO[state.user.country].cities;
+  const centers = CENTERS[state.mapCity] || [];
+
+  return `
+  <div class="px-5 pt-5 fade-in">
+    <h2 class="font-display font-800 text-slate-950 text-xl mb-1">${t('mapTitle')}</h2>
+    <p class="text-slate-500 text-sm mb-5">${t('mapSubtitle')}</p>
+
+    <div class="mb-4">
+      <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">${t('filterByCity')}</label>
+      <select id="map-city-select" class="w-full bg-white border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-950 font-bold outline-none focus:border-[var(--brand)] appearance-none">
+        ${cities.map(c => `<option value="${c}" ${state.mapCity === c ? 'selected' : ''}>${c}</option>`).join('')}
+      </select>
+    </div>
+
+    <div id="map-visual" class="relative bg-gradient-to-br from-emerald-50 to-sky-50 rounded-3xl border border-slate-100 shadow-sm h-56 mb-6 overflow-hidden">
+      <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle, #1F6F5C 1px, transparent 1px); background-size: 18px 18px;"></div>
+      <div class="absolute top-3 left-4 bg-white/90 backdrop-blur rounded-full px-3 py-1.5 shadow-sm">
+        <p class="text-xs font-bold text-slate-950 flex items-center gap-1.5"><i class="fa-solid fa-location-dot brand-text"></i> ${state.mapCity}</p>
+      </div>
+      ${centers.map((c, i) => `
+        <div class="absolute w-8 h-8 rounded-full brand-bg border-2 border-white shadow-lg flex items-center justify-center text-white text-xs" style="left:${c.x}%; top:${c.y}%;">
+          <i class="fa-solid fa-house-medical"></i>
+        </div>
+      `).join('')}
+    </div>
+
+    <p class="text-slate-950 font-bold text-sm mb-3 px-1">${t('centersNearby')} <span class="text-slate-400 font-medium">(${centers.length})</span></p>
+
+    <div class="space-y-3 pb-4">
+      ${centers.length === 0 ? `
+        <div class="bg-white rounded-3xl border border-slate-100 p-8 text-center">
+          <i class="fa-solid fa-map-pin text-slate-300 text-3xl mb-3"></i>
+          <p class="text-slate-500 text-sm font-medium">${t('noCentersFound')}</p>
+        </div>
+      ` : centers.map(c => `
+        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+          <button data-center="${c.id}" class="center-toggle w-full text-left p-5 flex items-start justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-2xl brand-light-bg flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-house-chimney-medical brand-text"></i>
+              </div>
+              <div>
+                <p class="text-slate-950 font-bold text-sm leading-tight mb-1">${c.name}</p>
+                ${c.verified ? `<span class="text-[10px] font-bold text-emerald-600 flex items-center gap-1"><i class="fa-solid fa-badge-check"></i> ${t('verified')}</span>` : ''}
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-down text-slate-400 text-xs mt-2 transition-transform ${state.activeCenterId === c.id ? 'rotate-180' : ''}"></i>
+          </button>
+          <div class="accordion-body ${state.activeCenterId === c.id ? 'open' : ''}">
+            <div class="px-5 pb-5 space-y-3 border-t border-slate-100 pt-4">
+              <div class="flex items-start gap-2.5">
+                <i class="fa-solid fa-clock text-slate-400 mt-0.5 w-4"></i>
+                <div><p class="text-[10px] font-bold text-slate-400 uppercase">${t('schedule')}</p><p class="text-sm text-slate-800 font-medium">${c.hours}</p></div>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <i class="fa-solid fa-location-dot text-slate-400 mt-0.5 w-4"></i>
+                <div><p class="text-[10px] font-bold text-slate-400 uppercase">${t('address')}</p><p class="text-sm text-slate-800 font-medium">${c.address}</p></div>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <i class="fa-solid fa-phone text-slate-400 mt-0.5 w-4"></i>
+                <div><p class="text-[10px] font-bold text-slate-400 uppercase">${t('hotline')}</p><p class="text-sm text-slate-800 font-medium">${c.hotline}</p></div>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <i class="fa-solid fa-user-doctor text-slate-400 mt-0.5 w-4"></i>
+                <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">${t('staff')}</p>
+                  <ul class="space-y-0.5">${c.staff.map(s => `<li class="text-sm text-slate-800 font-medium">• ${s}</li>`).join('')}</ul>
+                </div>
+              </div>
+              <a href="tel:${c.hotline.replace(/[^0-9+]/g, '')}" class="mt-2 flex items-center justify-center gap-2 brand-bg text-white font-bold py-3 rounded-2xl text-sm active:scale-[0.98] transition-all">
+                <i class="fa-solid fa-phone"></i> ${t('call')}
+              </a>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
+function bindMapEvents() {
+  document.getElementById('map-city-select').addEventListener('change', (e) => {
+    state.mapCity = e.target.value;
+    state.activeCenterId = null;
+    render();
+    setTimeout(() => {
+      const visual = document.getElementById('map-visual');
+      if (visual) {
+        visual.classList.add('shake');
+        setTimeout(() => visual.classList.remove('shake'), 500);
+      }
+    }, 30);
+  });
+
+  document.querySelectorAll('.center-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.center;
+      state.activeCenterId = state.activeCenterId === id ? null : id;
+      render();
+    });
+  });
+}
+
+/* -------------------------------------------------------------------------
+   16. TAB 4 — CALENDAR / PROFILE / SETTINGS
+------------------------------------------------------------------------- */
+function renderCalendarTab() {
+  const catColors = { mental: 'text-violet-600 bg-violet-50', finance: 'text-amber-600 bg-amber-50', safety: 'text-sky-600 bg-sky-50', health: 'text-rose-600 bg-rose-50' };
+  const countryOptions = Object.keys(GEO).map(c =>
+    `<option value="${c}" ${state.user.country === c ? 'selected' : ''}>${GEO[c].flag} ${c}</option>`
+  ).join('');
+  const cityOptions = GEO[state.user.country].cities.map(c =>
+    `<option value="${c}" ${state.user.city === c ? 'selected' : ''}>${c}</option>`
+  ).join('');
+  const ageOptions = [];
+  for (let a = 12; a <= 18; a++) {
+    ageOptions.push(`<option value="${a}" ${state.user.age === a ? 'selected' : ''}>${a} ${t('years')}</option>`);
+  }
+  const langs = Object.keys(LANG_LABELS);
+
+  return `
+  <div class="px-5 pt-5 fade-in">
+    <h2 class="font-display font-800 text-slate-950 text-xl mb-5">${t('calendarTitle')}</h2>
+
+    <div class="brand-bg rounded-3xl p-5 mb-6 relative overflow-hidden">
+      <div class="absolute -bottom-10 -right-6 w-32 h-32 rounded-full bg-white/10"></div>
+      <div class="relative z-10 flex items-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-display font-800 text-white">
+          ${(state.user.nickname || '?').charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <p class="text-white font-display font-800 text-lg">${state.user.nickname}</p>
+          <p class="text-white/70 text-xs">${state.user.age} ${t('years')} · ${state.user.city}, ${state.user.country}</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-2.5 mt-5 relative z-10">
+        <div class="bg-white/15 backdrop-blur rounded-2xl p-3">
+          <p class="text-white font-display font-800 text-lg">${state.forumQuestions.length}</p>
+          <p class="text-white/70 text-[10px] font-medium leading-tight">${t('questionsAsked')}</p>
+        </div>
+        <div class="bg-white/15 backdrop-blur rounded-2xl p-3">
+          <p class="text-white font-display font-800 text-lg">${state.registeredEvents.length}</p>
+          <p class="text-white/70 text-[10px] font-medium leading-tight">${t('eventsRegistered')}</p>
+        </div>
+        <div class="accent-bg rounded-2xl p-3">
+          <p class="text-white font-display font-800 text-lg">${computeSecurityLevel()}%</p>
+          <p class="text-white/85 text-[10px] font-medium leading-tight">${t('securityLevel')}</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-slate-950 font-bold text-sm mb-3 px-1">${t('eventsTitle')}</p>
+    <div class="space-y-3 mb-8">
+      ${EVENTS.map(ev => {
+        const isRegistered = state.registeredEvents.includes(ev.id);
+        const cat = catColors[ev.category] || catColors.mental;
+        const orgColor = ev.organizer === 'MCZ' ? 'bg-sky-50 text-sky-700' : 'bg-orange-50 text-orange-700';
+        return `
+        <div class="bg-white rounded-3xl border border-slate-100 p-4 shadow-sm flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl ${cat} flex items-center justify-center shrink-0">
+            <i class="fa-solid ${ev.icon}"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-slate-950 font-bold text-sm leading-snug mb-1">${escapeHtml(ev.title_ru)}</p>
+            <div class="flex items-center flex-wrap gap-1.5">
+              <span class="text-slate-500 text-xs font-medium">${ev.date} · ${ev.spots} ${t('spotsLeft')}</span>
+              <span class="${orgColor} text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">${ev.organizer}</span>
+            </div>
+          </div>
+          <button data-event="${ev.id}" class="event-register-btn shrink-0 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all active:scale-95 ${isRegistered ? 'bg-emerald-500 text-white' : 'accent-bg text-white'}">
+            ${isRegistered ? t('registered') : t('register')}
+          </button>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <p class="text-slate-950 font-bold text-sm mb-3 px-1">${t('editProfile')}</p>
+    <div class="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4 mb-6">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">${t('age')}</label>
+        <select id="profile-age" class="w-full bg-slate-100 rounded-2xl px-4 py-3 text-sm text-slate-950 font-bold outline-none appearance-none">
+          ${ageOptions.join('')}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">${t('country')}</label>
+        <select id="profile-country" class="w-full bg-slate-100 rounded-2xl px-4 py-3 text-sm text-slate-950 font-bold outline-none appearance-none">
+          ${countryOptions}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">${t('city')}</label>
+        <select id="profile-city" class="w-full bg-slate-100 rounded-2xl px-4 py-3 text-sm text-slate-950 font-bold outline-none appearance-none">
+          ${cityOptions}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">${t('languageTitle')}</label>
+        <select id="profile-language" class="w-full bg-slate-100 rounded-2xl px-4 py-3 text-sm text-slate-950 font-bold outline-none appearance-none">
+          ${langs.map(l => `<option value="${l}" ${state.currentLanguage === l ? 'selected' : ''}>${LANG_LABELS[l]}</option>`).join('')}
+        </select>
+      </div>
+      <button id="btn-save-profile" class="w-full brand-bg text-white font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all">${t('saveChanges')}</button>
+      <div id="profile-saved-toast" class="hidden brand-light-bg brand-text text-sm font-bold rounded-2xl px-4 py-2.5 text-center"></div>
+    </div>
+
+    <p class="text-slate-950 font-bold text-sm mb-3 px-1">${t('apiKeyTitle')}</p>
+    <div class="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm mb-6">
+      <p class="text-slate-500 text-xs leading-relaxed mb-3">${t('apiKeyDesc')}</p>
+      <input id="api-key-input" type="text" value="${state.openaiKey}"
+        class="w-full bg-slate-100 rounded-2xl px-4 py-3 text-xs text-slate-950 font-mono outline-none focus:ring-2 focus:ring-[var(--brand)] mb-3">
+      <button id="btn-save-key" class="w-full accent-bg text-white font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all">${t('saveChanges')}</button>
+      <div id="key-saved-toast" class="hidden brand-light-bg brand-text text-sm font-bold rounded-2xl px-4 py-2.5 text-center mt-3"></div>
+    </div>
+
+    <button id="btn-logout" class="w-full bg-white border-2 border-red-200 danger-text font-bold py-3.5 rounded-2xl mb-10 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+      <i class="fa-solid fa-right-from-bracket"></i> ${t('logout')}
+    </button>
+  </div>`;
+}
+
+function bindCalendarEvents() {
+  document.querySelectorAll('.event-register-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.event;
+      if (!state.registeredEvents.includes(id)) {
+        state.registeredEvents.push(id);
+        saveEvents();
+        logActivity('event');
+        render();
+      }
+    });
+  });
+
+  document.getElementById('profile-country').addEventListener('change', (e) => {
+    const newCountry = e.target.value;
+    const citySelect = document.getElementById('profile-city');
+    citySelect.innerHTML = GEO[newCountry].cities.map(c => `<option value="${c}">${c}</option>`).join('');
+  });
+
+  document.getElementById('btn-save-profile').addEventListener('click', () => {
+    state.user.age = parseInt(document.getElementById('profile-age').value, 10);
+    state.user.country = document.getElementById('profile-country').value;
+    state.user.city = document.getElementById('profile-city').value;
+    state.currentLanguage = document.getElementById('profile-language').value;
+    state.mapCity = GEO[state.user.country].cities.includes(state.mapCity) ? state.mapCity : state.user.city;
+    saveUser();
+    saveLang();
+    render();
+    setTimeout(() => {
+      const toast = document.getElementById('profile-saved-toast');
+      if (toast) {
+        toast.textContent = t('saved');
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 2000);
+      }
+    }, 30);
+  });
+
+  document.getElementById('btn-save-key').addEventListener('click', () => {
+    const val = document.getElementById('api-key-input').value.trim();
+    if (val) {
+      state.openaiKey = val;
+      saveKey();
+      const toast = document.getElementById('key-saved-toast');
+      toast.textContent = t('saved');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2000);
+    }
+  });
+
+  document.getElementById('btn-logout').addEventListener('click', () => {
+    state.user.authenticated = false;
+    state.chatHistory = [];
+    render();
+  });
+}
+
+/* -------------------------------------------------------------------------
+   17. INITIAL RENDER
+------------------------------------------------------------------------- */
+if (state.user.authenticated && state.chatHistory.length === 0) {
+  state.chatHistory = [{ role: 'assistant', content: t('aiWelcome') }];
+}
+render();
+
+</script>
+</body>
+</html>
